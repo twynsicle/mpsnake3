@@ -1,0 +1,111 @@
+
+@import './mixins';
+@import './variables';
+
+html {box-sizing: border-box;}
+*, *:before, *:after { box-sizing: inherit; }
+
+*, *:before, *:after {outline: none;}
+
+body {
+  font-family: 'Fira Sans', sans-serif;
+  //font-family: 'Raleway', sans-serif;
+  //font-family: 'Open Sans', sans-serif;
+
+	font-weight: 400;
+	color: rgba(0,0,0,0.54);
+	font-size: .95rem;
+  padding: 0;
+  margin: 0;
+  background-color: $off-white;
+}
+
+p, textarea {
+	//font-family: 'Merriweather', serif;
+	font-size: 0.8rem;
+	line-height: 1.5;
+	margin: 0;
+}
+
+textarea {
+	resize: none;
+}
+
+ul {
+  list-style: none;
+  margin: 0;
+	padding: 0;
+}
+
+h1, h2, h3, h4, h5 {
+  font-weight: 500;
+  margin: 0;
+	color: #a8a8a8;
+}
+
+h3 {
+	font-family: 'Oswald', serif;
+	//font-size: 1rem;
+	//font-weight: 400;
+}
+
+button {
+	background-color: $primary-color;
+	color: white;
+	border: none;
+	padding: 0.6rem 0.8rem 0.4rem;
+	font-size: 1rem;
+	transition: background-color 0.2s;
+	border-radius: 5px;
+	border-bottom: 2px solid $primary-color-dark;
+	min-width: 6.4rem;
+	&:hover {
+		background-color: $primary-color-dark;
+	}
+}
+
+button.secondary-button {
+	background-color: rgba(0, 0, 0, 0.3);;
+}
+
+fieldset {
+	border: none;
+	padding: 0;
+}
+
+label {
+	cursor: pointer;
+}
+
+.panel {
+	header {
+		background-color: white;
+		padding: 1rem 1rem 0.6rem 1rem;
+		border-radius: 5px 5px 0 0;
+		h3 {
+			color: $primary-color;
+		}
+	}
+	> div {
+		&:after {content: ' '; clear:both; display: table;}
+		background-color: white;
+		border-radius: 0 0 5px 5px;
+		border-bottom: 3px solid #e3e4e8;
+		padding: 0 1rem 1rem;
+	}
+}
+
+$susy: (
+  columns: 12,
+  gutters: 1/2,
+  //math: fluid,
+  //output: float,
+  //gutter-position: inside,
+  global-box-sizing: border-box,
+  //debug: (
+  //  image: show,
+  //  color: blue,
+  //  output: overlay,
+  //  toggle: top left,
+  //),
+);

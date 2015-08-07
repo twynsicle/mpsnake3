@@ -1,0 +1,59 @@
+
+
+.page-header {
+	width: 100%;
+	height: 4rem;
+	margin: 0;
+	position: fixed;
+	background-color: $dark-color;
+
+	.header-content {
+		//@include container(100%);
+		display:flex;
+		justify-content: space-between;
+		align-items: center;
+		height: 4rem;
+
+		.title {
+			font-size: 1.5rem;
+			padding:  0 1.3rem 0 0;
+			font-family: 'Playball', cursive;
+			color: $dark-color-light;
+			background-color: $dark-color-dark;
+			height: 4rem;
+			line-height: 2.7;
+		}
+
+	}
+}
+
+
+// Tablet
+@media (min-width: 768px) {
+	.page-header {
+		.header-content {
+			padding: 0 2rem;
+		}
+	}
+}
+
+// Desktop
+@media (min-width: 992px) {
+	.page-header {
+
+
+		.header-content {
+			width: $desktop-page-width;
+			margin: 0 auto;
+			//border-left: 1px solid rgba(0,0,0,0.2);
+			//border-right: 1px solid rgba(0,0,0,0.2);
+		}
+	}
+
+	div.dark {
+		background-color: $dark-color-dark;
+		height: 4rem;
+		position: absolute; left: 0; top: 0;
+		width: calc(50% - 700px + 2rem);
+	}
+}

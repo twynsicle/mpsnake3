@@ -1,0 +1,120 @@
+.homepage {
+
+	.main {
+		//outline: 1px solid hotpink;
+		@include span (8 of 12);
+		section { margin-bottom: 2rem; }
+		h2 { margin-bottom: 0.5rem; }
+		padding-top: 1rem;
+
+		.game #canvas {
+			//border: 1px solid #ccc;
+			border-bottom: 3px solid #e3e4e8;
+			background-color: white;
+			border-radius: 5px;
+		}
+
+	}
+
+	aside {
+		@include span (4 of 12 last);
+		padding-top: 1rem;
+
+		#account {
+			margin-bottom: 2rem;
+
+			.login-container {
+				select {
+					color: #777;
+				}
+
+				li {
+					margin-bottom: .7rem;
+				}
+
+				h4 {
+					font-weight: 500;
+					color: #989696;
+					margin: 0 0 7px;
+				}
+
+				button {
+					margin-top: 1rem;
+					float: right;
+					cursor: pointer;
+				}
+				.login {
+					margin-left: .5rem;
+				}
+				.colors, .teams {
+					display: flex;
+				}
+				.team label {background: transparent url(/app/images/lemons.png) center center / 3.5rem 3.5rem no-repeat;}
+				.team .lemons {background-image:url(/app/images/lemons.png);}
+				.team .ai {background-image: url(/app/images/ai.png);}
+				.team .biebs {background-image: url(/app/images/biebs.png);}
+				.team .giants {background-image: url(/app/images/giants.png);}
+				.team .illuminati {background-image: url("/app/images/illuminati.jpg");}
+				.team .ops {background-image: url(/app/images/ops.png);}
+
+			}
+
+		}
+
+		#scores {
+			//outline: 1px solid hotpink;
+			.team {
+				margin-bottom: 1rem;
+
+				h4 {
+					margin-bottom: .1rem;
+				}
+			}
+
+			.player {
+				//outline: 1px solid hotpink;
+				.status {
+					display: inline-block;
+					@include size(0.7rem);
+					border-radius: 0.35rem;
+					border: 1px solid #ccc;
+					margin-right: .3rem;
+					position: relative;
+					top: 1px;
+					&.ready {
+						background-color: $active-color;
+						border: none;
+					}
+				}
+				.score {
+					float: right;
+				}
+				.controls {
+					text-align: center;
+					button {
+						display: inline-block;
+					}
+				}
+			}
+			.player.local .name{
+				font-weight: 600;
+			}
+		}
+	}
+}
+
+
+// Tablet
+@media (min-width: 768px) {
+
+}
+
+// Desktop
+@media (min-width: 992px) {
+
+}
+
+// Large Desktop
+@media (min-width: 1500px) {
+
+}

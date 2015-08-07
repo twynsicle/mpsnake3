@@ -1,0 +1,48 @@
+.page-footer {
+	width: 100%;
+	margin: 0;
+	background-color: $primary-color;
+
+	.footer-content {
+
+	}
+}
+
+// Tablet
+@media (min-width: 768px) {
+	.page-footer {
+		.footer-content {
+			padding: 0 2rem;
+		}
+	}
+}
+
+// Desktop
+@media (min-width: 992px) {
+	.page-footer {
+		color: $primary-color-light;
+		padding-top: 1.3rem;
+		padding-bottom: 2rem;
+		font-size: 0.9rem;
+
+		.footer-content {
+			width: $desktop-page-width;
+			margin: 0 auto;
+
+			@include container(100%);
+			.column {@include span(2 of 12);}
+			.column-large {@include span(3 of 12);}
+			.column-large:last-of-type {@include last;}
+
+			h5 {
+				font-size: 1rem;
+				margin-bottom: .2rem;
+				font-weight: 500;
+				color: $primary-color-light;
+			}
+
+			//border-left: 1px solid rgba(0,0,0,0.2);
+			//border-right: 1px solid rgba(0,0,0,0.2);
+		}
+	}
+}

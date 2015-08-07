@@ -1,0 +1,102 @@
+
+
+@import './base';
+@import './mixins';
+@import './vendors/susy/susy';
+@import './variables';
+
+// Components
+@import 'components/_header';
+@import 'components/_footer';
+@import 'components/_inputs';
+
+// Pages
+@import 'pages/_home';
+
+
+
+
+body {
+  background-color: $background-color;
+}
+
+.page {
+  width: 100%;
+  margin: 0;
+
+  .content {
+    @include container(100%);
+    //background-color: white;
+	  padding: 1rem 1rem 0;
+    min-height: 1000px;
+  }
+}
+
+// Modal
+
+.modals {
+	width: 100%; height: 100%;
+	position: absolute; top: 0; left: 0;
+}
+
+.modal-backdrop {
+	width: 100%; height: 100%;
+	position: absolute; top: 0; left: 0;
+	background-color: rgba(0, 0, 0, 0.3);
+}
+
+.modal {
+	@include container(100%);
+	padding: 2rem;
+	position: absolute;
+	top: 10%;
+	background-color: $background-color;
+	border: 1px solid darken($background-color, 40%);
+
+	h1 {
+		margin-bottom: 1rem;
+	}
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+// Tablet
+@media (min-width: 768px) {
+  .page {
+    .content {
+	    padding: 5rem 2rem 0;
+    }
+  }
+}
+
+// Desktop
+@media (min-width: 992px) {
+  .page {
+    width: $desktop-page-width;
+    margin: 0 auto;
+
+    .content {
+      //border-left: 1px solid rgba(0,0,0,0.2);
+      //border-right: 1px solid rgba(0,0,0,0.2);
+    }
+  }
+}
+
+// Large Desktop
+@media (min-width: 1500px) {
+
+}
+
+
+
