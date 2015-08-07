@@ -17,6 +17,14 @@ namespace mpsnake3 {
 			Clients.Caller.registerResponse(clientId);
 		}
 
+		public void RequestSnakes(string group) {
+			var clientId = GetClientId();
+			Clients.OthersInGroup(group).requestSnake(clientId);
+		}
+
+		public void SendSnake(string clientId, string data) {
+			Clients.User(clientId).recieveSnake(data);
+		}
 
 		#region Utilities
 

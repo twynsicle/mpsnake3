@@ -3,7 +3,7 @@
 /// <reference path="../../libs/lodash.d.ts" />
 /// <reference path="../Global.ts" />
 
-/// <reference path="../utils/Directions.ts" />
+/// <reference path="../utils/Enums.ts" />
 /// <reference path="../utils/Random.ts" />
 /// <reference path="../utils/Vec2.ts" />
 
@@ -33,7 +33,7 @@ module MPSnake {
 		}
 
 		public respawn():void {
-			this.pos = new Vec2(_.random(0, Global.GRID_CELLS),_.random(0, Global.GRID_CELLS));
+			var pos = Global.getEmptyCell;
 			this.sprites.x = this.pos.toPoint().x;
 			this.sprites.y = this.pos.toPoint().y;
 		}

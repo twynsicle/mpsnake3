@@ -1,8 +1,10 @@
 /// <reference path="Global.ts" />
 /// <reference path="entities/Fruit.ts" />
 /// <reference path="entities/Snake.ts" />
+/// <reference path="../libs/easystarjs.d.ts" />
 /// <reference path="../libs/jquery.d.ts" />
 /// <reference path="../libs/phaser.d.ts" />
+/// <reference path="utils/Enums.ts" />
 /// <reference path="utils/Vec2.ts" />
 
 module MPSnake {
@@ -13,10 +15,8 @@ module MPSnake {
 		background:Phaser.Sprite;
 		//music:Phaser.Sound;
 
-		snake:Snake;
-
 		lastUpdate:number = 0;
-		timeBetweenUpdates:number = 200; //ms time between updates of game state.
+		timeBetweenUpdates:number = 1; //ms time between updates of game state.
 
 		create() {
 
@@ -24,18 +24,22 @@ module MPSnake {
 
 			this.game.stage.backgroundColor = '#333333';
 
+			// AStar
+			//TODO only set up if AI?
+			Global.easyStar = new EasyStar.js();
+			Global.easyStar.setAcceptableTiles([0]);
+			Global.rebuildPathMap();
+			Global.easyStar.setGrid(Global.pathMap);
 
-
-			// Spawn Monsters
-			Global.monsterSprites = this.game.add.group();
-			Global.monsterSprites.x = 0;
-			Global.monsterSprites.y = 0;
-
-			this.snake = new Snake(this.game, new Vec2(10,10), Global.SNAKE_INITIAL_LENGTH, '#00FF00');
+			// Spawn Snakes
+			//TODO wait until a) player requests, be other snake position recieved
+			//TODO check all spawn squares.
+			var startingPos:Vec2 = Global.getEmptyCell();
+			console.log('localSnake starting at:', startingPos);
+			Global.localSnake = new Snake(this.game, startingPos, Global.SNAKE_INITIAL_LENGTH, '#00FF00');
 
 			// Create fruit
 			Global.fruit = new Fruit(this.game);
-
 		}
 
 		update():void {
@@ -46,7 +50,16 @@ module MPSnake {
 
 			if ((new Date().getTime() - this.lastUpdate) > this.timeBetweenUpdates) {
 
-				this.snake.update();
+				if (Global.pathMapDirty) {
+					Global.rebuildPathMap();
+					Global.easyStar.setGrid(Global.pathMap);
+				}
+				Global.easyStar.calculate();
+
+
+				if (Global.gameState === GameState.STARTED) {
+					Global.localSnake.update();
+				}
 
 				this.lastUpdate = (new Date().getTime());
 			}
@@ -60,7 +73,7 @@ module MPSnake {
 			// game.debug.text(game.time.physicsElapsed, 32, 32);
 			// game.debug.body(player);
 
-			this.snake.render();
+			Global.localSnake.render();
 		}
 
 	}

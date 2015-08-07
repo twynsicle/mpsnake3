@@ -8,4 +8,10 @@ module MPSnake {
 		LEFT,
 		RIGHT
 	}
+
+	export enum GameState {
+		READY,
+		STARTED,
+		ENDED
+	}
 }
