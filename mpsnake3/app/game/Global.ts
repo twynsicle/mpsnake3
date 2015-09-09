@@ -3,10 +3,13 @@
 /// <reference path="entities/Snake.ts" />
 /// <reference path="utils/Enums.ts" />
 /// <reference path="../libs/easystarjs.d.ts" />
+///<reference path="managers\SnakeManager.ts"/>
 
 module MPSnake {
 
 	export class Global {
+
+		public static game:Phaser.Game;
 
 		// Constants
 		public static SNAKE_INITIAL_LENGTH:number = 5;
@@ -19,8 +22,10 @@ module MPSnake {
 		public static gameState:GameState = GameState.READY;
 
 		// Entities
-		public static localSnake: Snake;
 		public static fruit:Fruit;
+
+		// Managers
+		public static snakeManager:SnakeManager;
 
 		//TODO function to check collisions.
 
@@ -60,14 +65,20 @@ module MPSnake {
 				}
 			}
 
-			// Fill in snake positions
-			// We ignore the first postition in the array for each snake since it is a placeholder
-			if (this.localSnake) {
-				for (i = 1; i < this.localSnake.segmentPositions.length; i += 1) {
-					var pos:Vec2 = this.localSnake.segmentPositions[i];
+			// Fill in snake positions.
+			if (this.snakeManager.localPlayer) {
+				// We ignore the first position in the array for each snake since it is a placeholder.
+				for (i = 1; i < this.snakeManager.localPlayer.segmentPositions.length; i += 1) {
+					var pos:Vec2 = this.snakeManager.localPlayer.segmentPositions[i];
 					Global.pathMap[pos.y][pos.x] = 1;
 				}
 			}
+			_.forEach(this.snakeManager.remotePlayers, (player:Snake) => {
+				for (i = 1; i < player.segmentPositions.length; i += 1) {
+					var pos:Vec2 = player.segmentPositions[i];
+					Global.pathMap[pos.y][pos.x] = 1;
+				}
+			});
 		}
 
 		/// Sets PathMap to require rebuilding before it is used again.
@@ -91,5 +102,26 @@ module MPSnake {
 				}
 			}
 		}
+
+		//
+		// GameState
+		//
+		static getGameData ():any {
+			return {
+				gameState: Global.gameState,
+				fruitPosition: Global.fruit.pos
+			}
+		}
+		static setGameData(data:any) {
+			Global.gameState = data.gameState;
+			var fruitPosition = new Vec2(data.fruitPosition.x, data.fruitPosition.y);
+			if (!Global.fruit) {
+				Global.fruit = new Fruit(Global.game, fruitPosition);
+			} else {
+				Global.fruit.destroy();
+				Global.fruit = new Fruit(Global.game, fruitPosition);
+			}
+		}
+		
 	}
 }

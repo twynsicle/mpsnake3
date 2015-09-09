@@ -6,6 +6,7 @@
 /// <reference path="../libs/phaser.d.ts" />
 /// <reference path="utils/Enums.ts" />
 /// <reference path="utils/Vec2.ts" />
+///<reference path="managers\SnakeManager.ts"/>
 
 module MPSnake {
 
@@ -20,7 +21,8 @@ module MPSnake {
 
 		create() {
 
-			//this.game.physics.startSystem(Phaser.Physics.P2JS);
+			Global.game = this.game;
+			Global.snakeManager = new SnakeManager(this.game);
 
 			this.game.stage.backgroundColor = '#333333';
 
@@ -31,15 +33,45 @@ module MPSnake {
 			Global.rebuildPathMap();
 			Global.easyStar.setGrid(Global.pathMap);
 
+			$(window).trigger('requestSnakes');
+
 			// Spawn Snakes
+
+			Global.snakeManager.createLocalPlayer({
+				color: Random.generateHex(),
+				segmentPositions: [],
+				headPosition: null,
+				name: 'derp',
+				startingPosition: Global.getEmptyCell(),
+				isAI: true,
+				snakeLength: Global.SNAKE_INITIAL_LENGTH
+			});
 			//TODO wait until a) player requests, be other snake position recieved
 			//TODO check all spawn squares.
-			var startingPos:Vec2 = Global.getEmptyCell();
-			console.log('localSnake starting at:', startingPos);
-			Global.localSnake = new Snake(this.game, startingPos, Global.SNAKE_INITIAL_LENGTH, '#00FF00');
+			//var startingPos:Vec2 = Global.getEmptyCell();
+			//console.log('localSnake starting at:', startingPos);
+			//Global.localSnake = new Snake(this.game, startingPos, Global.SNAKE_INITIAL_LENGTH, '#00FF00');
+			//TODO send snake to everyone registered  -they can double check based on client id.
 
-			// Create fruit
-			Global.fruit = new Fruit(this.game);
+
+
+			$(document).on('keydown', (event:JQueryEventObject) => {
+				if (event.which === 32) {
+					if (Global.gameState === GameState.STARTED) {
+						Global.gameState = GameState.READY;
+					} else {
+						Global.gameState = GameState.STARTED;
+						// Setup gamestate.
+						// Create fruit
+						Global.setGameData({
+							gameState: GameState.STARTED,
+							fruitPosition: Global.getEmptyCell()
+						});
+					}
+					$(window).trigger('updateGameState');
+					return false;
+				}
+			});
 		}
 
 		update():void {
@@ -50,30 +82,19 @@ module MPSnake {
 
 			if ((new Date().getTime() - this.lastUpdate) > this.timeBetweenUpdates) {
 
-				if (Global.pathMapDirty) {
-					Global.rebuildPathMap();
-					Global.easyStar.setGrid(Global.pathMap);
-				}
-				Global.easyStar.calculate();
-
-
 				if (Global.gameState === GameState.STARTED) {
-					Global.localSnake.update();
+
+					if (Global.pathMapDirty) {
+						Global.rebuildPathMap();
+						Global.easyStar.setGrid(Global.pathMap);
+					}
+					Global.easyStar.calculate();
+
+					Global.snakeManager.update();
 				}
 
 				this.lastUpdate = (new Date().getTime());
 			}
-		}
-
-
-		render():void {
-			//Global.lightingManager.render();
-
-
-			// game.debug.text(game.time.physicsElapsed, 32, 32);
-			// game.debug.body(player);
-
-			Global.localSnake.render();
 		}
 
 	}

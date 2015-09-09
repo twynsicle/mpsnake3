@@ -14,28 +14,26 @@ module MPSnake {
 
 		game:Phaser.Game;
 
-		sprites:Phaser.Group;
+		sprite:Phaser.Sprite;
 
 		pos:Vec2;
 
-
-		constructor(game:Phaser.Game) {
+		// TODO we only want to spawn this when the game starts.
+		constructor(game:Phaser.Game, startingPosition: Vec2) {
 			this.game = game;
+			this.pos = startingPosition;
 
-			// Determine position.
-			this.pos = new Vec2(_.random(0, Global.GRID_CELLS),_.random(0, Global.GRID_CELLS));
-
-			this.sprites = game.add.group();
-			this.sprites.add(this.createCell());
-			this.sprites.x = this.pos.toPoint().x;
-			this.sprites.y = this.pos.toPoint().y;
-			console.log(this.pos);
+			this.sprite = this.createCell();
+			this.sprite.x = this.pos.toPoint().x;
+			this.sprite.y = this.pos.toPoint().y;
+			//console.log(this.pos);
+			this.game.add.existing(this.sprite);
 		}
 
 		public respawn():void {
-			var pos = Global.getEmptyCell;
-			this.sprites.x = this.pos.toPoint().x;
-			this.sprites.y = this.pos.toPoint().y;
+			this.pos = Global.getEmptyCell();
+			this.sprite.x = this.pos.toPoint().x;
+			this.sprite.y = this.pos.toPoint().y;
 		}
 
 		private createCell():Phaser.Sprite {
@@ -54,6 +52,10 @@ module MPSnake {
 
 		render() {
 
+		}
+
+		public destroy():void {
+			this.sprite.kill();
 		}
 	}
 }

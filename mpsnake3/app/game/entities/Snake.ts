@@ -7,6 +7,7 @@
 /// <reference path="../utils/Enums.ts" />
 /// <reference path="../utils/Random.ts" />
 /// <reference path="../utils/Vec2.ts" />
+///<reference path="ISnakeData.ts"/>
 
 
 module MPSnake {
@@ -21,60 +22,72 @@ module MPSnake {
 		segments:Phaser.Sprite[] = [];
 		segmentPositions:Vec2[] = [];
 		color: string;
+		name: string;
 		length:number;
 		direction:Directions = Directions.DOWN;
+		isAI: boolean;
+		isRemote: boolean;
 
 
-		constructor(game:Phaser.Game, startingPosition:Vec2, length:number, color:string) {
+		//constructor(game:Phaser.Game, startingPosition:Vec2, length:number, color:string) {
+		constructor(game:Phaser.Game, isRemote:boolean, data:SnakeData) {
 			this.game = game;
-			this.color = color;
-			this.length = length;
+			this.isRemote = isRemote;
+			this.color = data.color;
+			this.name = data.name;
+			this.length = data.snakeLength;
+			this.isAI = data.isAI;
 
 			this.sprites = game.add.group();
 
-			// Setup body.
-			// We generate an extra cell to use as the placeholder for new segments.
-			_.times(length + 1, (i) => {
+			if (isRemote) {
+				this.segmentPositions = data.segmentPositions;
+				_.each(this.segmentPositions, (pos) => {
+					var sprite = this.createCell(pos);
+					this.segments.push(sprite);
+					this.game.add.existing(sprite);
+				});
+			} else {
+				// Setup body.
+				// We generate an extra cell to use as the placeholder for new segments.
+				_.times(this.length + 1, (i) => {
 
-				var tilePos = new Vec2(startingPosition.x, startingPosition.y + i);
-				tilePos.wrapToBoard();
-				this.segmentPositions.push(tilePos);
-				var sprite = this.createCell(tilePos);
-				this.segments.push(sprite);
-				this.game.add.existing(sprite);
-			});
-			this.headPosition = this.segmentPositions[this.segmentPositions.length - 1];
+					var tilePos = new Vec2(data.startingPosition.x, data.startingPosition.y + i);
+					tilePos.wrapToBoard();
+					this.segmentPositions.push(tilePos);
+					var sprite = this.createCell(tilePos);
+					this.segments.push(sprite);
+					this.game.add.existing(sprite);
+				});
+				this.headPosition = this.segmentPositions[this.segmentPositions.length - 1];
 
-			// Controls.
-			$(document).on('keydown', (event:JQueryEventObject) => {
-				switch(event.keyCode){
-					case 37: // left
-						this.direction = Directions.LEFT;
-						return false;
-						break;
-					case 39: // right
-						this.direction = Directions.RIGHT;
-						return false;
-						break;
-					case 38: // up
-						this.direction = Directions.UP;
-						return false;
-						break;
-					case 40: //down
-						this.direction = Directions.DOWN;
-						return false;
-						break;
-					default:
-						break;
-				}
-			});
+				// Controls.
+				$(document).on('keydown', (event:JQueryEventObject) => {
+					switch (event.keyCode) {
+						case 37: // left
+							this.direction = Directions.LEFT;
+							return false;
+							break;
+						case 39: // right
+							this.direction = Directions.RIGHT;
+							return false;
+							break;
+						case 38: // up
+							this.direction = Directions.UP;
+							return false;
+							break;
+						case 40: //down
+							this.direction = Directions.DOWN;
+							return false;
+							break;
+						default:
+							break;
+					}
+				});
+			}
 
 		}
 
-		private increaseLength() {
-			this.length += 1;
-			this.segments[0] = this.createCell(this.segmentPositions[0]);
-		}
 
 		private createCell(tilePos:Vec2):Phaser.Sprite {
 			var bitmap = new Phaser.BitmapData(this.game, Random.guid(), Global.CELL_HEIGHT, Global.CELL_HEIGHT);
@@ -103,26 +116,41 @@ module MPSnake {
 		}
 
 
-		private updatePosition(newHeadPosition:Vec2):void {
+		public increaseLength() {
+			if (!this.isRemote) {
+				$(window).trigger('updateSnake', [{updateType: UpdateType.INCREASE_LENGTH}]);
+			}
 
-			// Loop around the bounds of the arena
-			if (newHeadPosition.x < 0) {newHeadPosition.x = Global.GRID_CELLS - 1;}
-			if (newHeadPosition.y < 0) {newHeadPosition.y = Global.GRID_CELLS - 1;}
-			if (newHeadPosition.x > Global.GRID_CELLS) {newHeadPosition.x = 0;}
-			if (newHeadPosition.y > Global.GRID_CELLS) {newHeadPosition.y = 0;}
+			this.length += 1;
+			this.segments[0] = this.createCell(this.segmentPositions[0]);
+		}
+
+
+		private checkCollisions(newHeadPosition:Vec2):void {
+			if (this.isRemote) {
+				console.error('Collisions can only be checked by local snake.');
+				return;
+			}
 
 			// Check for collision with fruit
 			if (newHeadPosition.x === Global.fruit.pos.x && newHeadPosition.y === Global.fruit.pos.y) {
-				Global.fruit.respawn();
 				this.increaseLength();
-				console.log('collision');
+
+				Global.fruit.respawn();
+				$(window).trigger('updateGameState');
+			}
+		}
+
+
+		public updatePosition(newHeadPosition:Vec2):void {
+			if (!this.isRemote) {
+				$(window).trigger('updateSnake', [{updateType: UpdateType.MOVE, pos: newHeadPosition}]);
 			}
 
-			// Move snake head.
-			//this.sprites.children.shift();
-			//this.sprites.add(this.createCell(this.headPosition.x, this.headPosition.y));
+			// Ensure tail is removed - this should not be required.
 			this.segments[0].kill();
 
+			// Move snake head.
 			this.segmentPositions.push(newHeadPosition);
 			var sprite = this.createCell(newHeadPosition);
 			this.segments.push(sprite);
@@ -136,6 +164,7 @@ module MPSnake {
 			}
 
 			this.headPosition = newHeadPosition;
+
 			// AStar //TODO we don't want to rebuild this from scratch each time.
 			Global.setPathMapDirty();
 		}
@@ -143,11 +172,13 @@ module MPSnake {
 
 		update() {
 
-			//console.log(this.headPosition);
-			//console.log(this.segmentPositions);
+			// Remote snakes are updated from the broadcasted results, rather than
+			// determining their behavior locally.
+			if (this.isRemote) {
+				return;
+			}
 
-			var ai = true;
-			if (!ai) {
+			if (!this.isAI) {
 				var newHeadPosition:Vec2 = this.headPosition;
 
 				// Update position according to current direction.
@@ -165,36 +196,56 @@ module MPSnake {
 						newHeadPosition = this.headPosition.add(1, 0);
 						break;
 				}
+				newHeadPosition.wrapToBoard();
+				this.checkCollisions(newHeadPosition);
 				this.updatePosition(newHeadPosition);
 			} else {
 				var promises = [];
 				promises.push(this.findPath(this.headPosition, Global.fruit.pos));
 				Q.all(promises).then((paths:Vec2[][]) => {
 					if (paths.length && paths[0] && paths[0].length > 1) {
-						var nextPos:Vec2;
+						var newHeadPosition:Vec2;
 						// Find current head position in best path - we need to check since the path might not have updated in time.
 						for (var i = 0; i < paths[0].length; i += 1) {
 							if (paths[0][i].x === this.headPosition.x && paths[0][i].y === this.headPosition.y) {
-								nextPos = new Vec2(paths[0][i+1].x, paths[0][i+1].y);
+								newHeadPosition = new Vec2(paths[0][i+1].x, paths[0][i+1].y);
 								break;
 							}
 						}
 
 						//console.log('pathing from: ', this.headPosition, ' to: ', Global.fruit.pos, ' first step: ', nextPos);
-						this.updatePosition(nextPos);
+						newHeadPosition.wrapToBoard();
+						this.checkCollisions(newHeadPosition);
+						this.updatePosition(newHeadPosition);
 					} else {
 						console.log('trapped!');
 						//console.log('pathing from: ', this.headPosition, ' to: ', Global.fruit.pos);
 					}
 				});
 			}
-
-
-
 		}
 
-		render() {
 
+		public getData():SnakeData {
+			//TODO name
+			return {
+				color: this.color,
+				segmentPositions: this.segmentPositions,
+				snakeLength: this.length,
+				headPosition: this.headPosition,
+				name: this.name,
+				startingPosition: null,
+				isAI: this.isAI
+
+			};
 		}
+
+
+		public destroy():void {
+			_.each(this.segments, (sprite:Phaser.Sprite) => {
+				sprite.kill();
+			});
+		}
+
 	}
 }

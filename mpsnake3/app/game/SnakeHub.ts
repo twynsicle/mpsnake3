@@ -12,7 +12,7 @@ module MPSnake {
 	export class SnakeHub {
 
 		private connection:HubConnection;
-		private proxy:HubProxy;
+		proxy:HubProxy;
 
 		private connected:boolean;
 
@@ -24,58 +24,77 @@ module MPSnake {
 			this.connection = $.hubConnection();
 			this.connection.logging = false;
 			// Binding with createHubProxy means you can use a string name, so no need to add dynamic properties to the hub
-			this.proxy = this.connection.createHubProxy('runHub');
+			this.proxy = this.connection.createHubProxy('snakeHub');
 			this.wireEventListeners();
 			this.initializeConnection(callback);
 
 			this.group = group;
 
-			// Wire event listeners.
+			/******************************************************************
+			 * Outbound
+			 *****************************************************************/
+			// Player management.
 			$(window).on('register', (event:JQueryEventObject) => {
 				this.proxy.invoke('Register', this.group);
 			});
 			$(window).on('requestSnakes', (event:JQueryEventObject) => {
+				console.log('requesting snakes already in game.');
 				this.proxy.invoke('RequestSnakes', this.group);
 			});
-			/*$(window).on('sendSnake', (event:JQueryEventObject) => {
-				this.proxy.invoke('sendSnake', this.group);
-			});*/
+			$(window).on('playerCreated', (event:JQueryEventObject) => {
+				var snakeData = Global.snakeManager.localPlayer.getData();
+				this.proxy.invoke('SendSnakeToAll', this.group, JSON.stringify(snakeData));
+			});
+			$(window).on('playerLeft', (event:JQueryEventObject) => {
+				this.proxy.invoke('RemoveSnake', this.group);
+			});
+			// Game state.
+			$(window).on('updateSnake', (event:JQueryEventObject, data) => {
+				this.proxy.invoke('UpdateSnake', this.group, JSON.stringify(data));
+			});
+			$(window).on('updateGameState', (event:JQueryEventObject) => {
+				var data = Global.getGameData();
+				this.proxy.invoke('UpdateGameState', this.group, JSON.stringify(data));
+			});
 
-			/*$(window).on('playerHit', (event:JQueryEventObject, data:ImpulseData) => {
-				this.proxy.invoke("AddImpulse", this.group, JSON.stringify(data));
-			});*/
 
 		}
 
-		// Binding with proxy.on means you can use a string name for the function, so no need to add dynamic properties to the hub.
+
+		/**********************************************************************
+		 * Outbound
+		 *********************************************************************/
 		wireEventListeners():void {
-			/*this.proxy.on("HandleFrameworkMessage", (message: IFrameworkMessage) => {
-			 console.log("HandleFrameworkMessage: " + message.AccountID + " - " + message.ArmID);
-			 // Do something to handle the message here.
-			 });*/
+			// Player Managemen.
 			this.proxy.on("registerResponse", (clientId:string) => {
 				this.clientId = clientId;
-
 				$(window).trigger('registered');
-				//alert(name);
-				//console.log("HandleFrameworkMessage: " + message.AccountID + " - " + message.ArmID);
-				// Do something to handle the message here.
 			});
 			this.proxy.on("requestSnake", (clientId:string) => {
+				console.log('snake requested, sending to ', clientId);
 				//TODO this can be a method of the snake object
-				var snakeData = {
-					segments: Global.localSnake.segmentPositions
-				};
-				this.proxy.invoke('SendSnake', clientId, JSON.stringify(snakeData));
+				var snakeData = Global.snakeManager.localPlayer.getData();
+				this.proxy.invoke('SendSnake', clientId, JSON.stringify(Global.snakeManager.localPlayer.getData()));
 			});
-			this.proxy.on("requestSnake", (clientId:string, snakeData:string) => {
-				var data = JSON.parse(data);
-				console.log(data);
+			this.proxy.on("receiveNewSnake", (clientId:string, snakeData:string) => {
+				var data = JSON.parse(snakeData);
+				Global.snakeManager.addRemotePlayer(clientId, data);
+				console.log('snake received', data);
+			});
+			this.proxy.on("removeSnake", (clientId:string) => {
+				Global.snakeManager.removePlayer(clientId);
+				console.log('snake has left the game ', clientId);
+			});
+			// Game State.
+			this.proxy.on("updateSnake", (clientId:string, data:string) => {
+				//TODO we are recieving twice as many of these packets as we want
+				Global.snakeManager.updateRemoteSnake(clientId, JSON.parse(data));
+			});
+			this.proxy.on("updateGameState", (data:any) => {
+				//TODO we are recieving twice as many of these as we want
+				Global.setGameData(JSON.parse(data));
 			});
 
-				/*this.proxy.on("addImpulse", (clientId, data) => {
-					Global.playerManager.addImpulse(clientId, JSON.parse(data));
-				});*/
 		}
 
 		initializeConnection(callback):void {
@@ -84,22 +103,9 @@ module MPSnake {
 			//Again, using invoke means passing a string argument.
 			this.connection.start().done(() => {
 				callback();
-				/*that.proxy.invoke("Connect", this.AccountID, this.ArmID).done((response:FrameworkHubResponse) => {
-				 //console.log("FHR: " + response.Success + " - " + response.Message);
-				 if (response.Success) {
-				 // Do something.
-				 }
-				 else {
-				 // Try again. Would be better with some kind of exponential back-off.
-				 setTimeout(that.initializeConnection, 500);
-				 }
-				 });*/
 
 			});
 		}
 
-		/*public createPlayer(name:string, pos:Phaser.Point) {
-		 this.proxy.invoke("send", name, pos.toString());
-		 }*/
 	}
 }

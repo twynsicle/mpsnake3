@@ -22,8 +22,28 @@ namespace mpsnake3 {
 			Clients.OthersInGroup(group).requestSnake(clientId);
 		}
 
-		public void SendSnake(string clientId, string data) {
-			Clients.User(clientId).recieveSnake(data);
+		public void SendSnake(string toClientId, string data) {
+			var fromClientId = GetClientId();
+			Clients.Client(toClientId).receiveNewSnake(fromClientId, data);
+		}
+
+		public void SendSnakeToAll(string group, string data) {
+			var clientId = GetClientId();
+			Clients.OthersInGroup(group).receiveNewSnake(clientId, data);
+		}
+
+		public void RemoveSnake (string group) {
+			var clientId = GetClientId();
+			Clients.OthersInGroup(group).removeSnake(clientId);
+		}
+
+		public void UpdateSnake(string group, string data) {
+			var clientId = GetClientId();
+			Clients.OthersInGroup(group).updateSnake(clientId, data);
+		}
+
+		public void UpdateGameState(string group, string data) {
+			Clients.OthersInGroup(group).updateGameState(data);
 		}
 
 		#region Utilities

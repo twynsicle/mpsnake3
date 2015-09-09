@@ -14,4 +14,9 @@ module MPSnake {
 		STARTED,
 		ENDED
 	}
+
+	export enum UpdateType {
+		MOVE,
+		INCREASE_LENGTH
+	}
 }
