@@ -30,6 +30,10 @@ module MPSnake {
 			return new Vec2(this.x*Global.CELL_HEIGHT, this.y*Global.CELL_HEIGHT);
 		}
 
+		public toString() {
+			return '{x:' + this.x + ',y:' + this.y + '}';
+		}
+
 
 	}
 }

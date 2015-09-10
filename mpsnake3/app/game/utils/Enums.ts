@@ -17,6 +17,14 @@ module MPSnake {
 
 	export enum UpdateType {
 		MOVE,
-		INCREASE_LENGTH
+		INCREASE_LENGTH,
+		COLLIDE_PLAYER
+	}
+
+	export enum PathMapContents {
+		EMPTY,
+		LOCAL_SNAKE,
+		REMOTE_SNAKE,
+		LOCAL_HEAD
 	}
 }

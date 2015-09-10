@@ -17,7 +17,7 @@ module MPSnake {
 		//music:Phaser.Sound;
 
 		lastUpdate:number = 0;
-		timeBetweenUpdates:number = 1; //ms time between updates of game state.
+		timeBetweenUpdates:number = 100; //ms time between updates of game state.
 
 		create() {
 
@@ -43,7 +43,7 @@ module MPSnake {
 				headPosition: null,
 				name: 'derp',
 				startingPosition: Global.getEmptyCell(),
-				isAI: true,
+				isAI: false,
 				snakeLength: Global.SNAKE_INITIAL_LENGTH
 			});
 			//TODO wait until a) player requests, be other snake position recieved

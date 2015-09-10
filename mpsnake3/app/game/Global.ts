@@ -32,7 +32,7 @@ module MPSnake {
 		// --------------------------------------------------------------------
 		// AStar
 		// --------------------------------------------------------------------
-		static easyStar: EasyStar.js;
+		static easyStar:EasyStar.js;
 		/// Map containing squares that are clear and free of entities.
 		static pathMap:number[][] = [];
 		/// If true PathMap needs to be rebuilt.
@@ -40,7 +40,7 @@ module MPSnake {
 
 
 		static preBuildPathMap() {
-			var i,j;
+			var i, j;
 			for (i = 0; i < Global.GRID_CELLS; i += 1) {
 				var row = [];
 				for (j = 0; j < Global.GRID_CELLS; j += 1) {
@@ -70,16 +70,27 @@ module MPSnake {
 				// We ignore the first position in the array for each snake since it is a placeholder.
 				for (i = 1; i < this.snakeManager.localPlayer.segmentPositions.length; i += 1) {
 					var pos:Vec2 = this.snakeManager.localPlayer.segmentPositions[i];
-					Global.pathMap[pos.y][pos.x] = 1;
+					// Mark head of snake as separate to the body.
+					if (i === this.snakeManager.localPlayer.segmentPositions.length - 1) {
+						Global.setPathMapValue(pos, PathMapContents.LOCAL_HEAD);
+					} else {
+						Global.setPathMapValue(pos, PathMapContents.LOCAL_SNAKE);
+					}
 				}
 			}
 			_.forEach(this.snakeManager.remotePlayers, (player:Snake) => {
 				for (i = 1; i < player.segmentPositions.length; i += 1) {
 					var pos:Vec2 = player.segmentPositions[i];
-					Global.pathMap[pos.y][pos.x] = 1;
+					Global.setPathMapValue(pos, PathMapContents.REMOTE_SNAKE);
 				}
 			});
 		}
+
+
+		static setPathMapValue(pos:Vec2, val:PathMapContents) {
+			Global.pathMap[pos.y][pos.x] = val;
+		}
+
 
 		/// Sets PathMap to require rebuilding before it is used again.
 		static setPathMapDirty():void {
@@ -92,7 +103,7 @@ module MPSnake {
 
 		// Uses pathmap to check if any snakes in cell.
 		static checkCellEmpty(cell:Vec2):boolean {
-			return !(Global.pathMap[cell.y][cell.x] === 1);
+			return !(Global.pathMap[cell.y][cell.x] != PathMapContents.EMPTY);
 		}
 		static getEmptyCell():Vec2 {
 			while (true) {
