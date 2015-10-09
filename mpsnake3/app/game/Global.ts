@@ -4,8 +4,11 @@
 /// <reference path="utils/Enums.ts" />
 /// <reference path="../libs/easystarjs.d.ts" />
 ///<reference path="managers\SnakeManager.ts"/>
+///<reference path="entities/Round.ts"/>
 
 module MPSnake {
+
+	declare var scoreActionCreator:any;
 
 	export class Global {
 
@@ -19,10 +22,11 @@ module MPSnake {
 		public static FRUIT_COLOR:string = '#FF0000';
 
 		// State
-		public static gameState:GameState = GameState.READY;
+		//public static gameState:GameState = GameState.READY;
 
 		// Entities
-		public static fruit:Fruit;
+		//public static fruit:Fruit;
+		public static round:Round;
 
 		// Managers
 		public static snakeManager:SnakeManager;
@@ -114,10 +118,30 @@ module MPSnake {
 			}
 		}
 
+
+		/**
+		 * Sends score data to the interface.
+		 */
+		public static updateInterface() {
+			var scores = [];
+			if (Global.snakeManager.localPlayer) {
+				scores.push(Global.snakeManager.localPlayer.getScoreData());
+			}
+			_.each(Global.snakeManager.remotePlayers, (snake:Snake) => {
+				scores.push(snake.getScoreData());
+			});
+
+			scoreActionCreator.updateScores(scores);
+			if (Global.round) {
+				scoreActionCreator.setGameRule(Global.round.gameRule);
+			}
+		}
+
+
 		//
 		// GameState
 		//
-		static getGameData ():any {
+		/*static getGameData ():any {
 			return {
 				gameState: Global.gameState,
 				fruitPosition: Global.fruit.pos
@@ -132,7 +156,7 @@ module MPSnake {
 				Global.fruit.destroy();
 				Global.fruit = new Fruit(Global.game, fruitPosition);
 			}
-		}
+		}*/
 		
 	}
 }

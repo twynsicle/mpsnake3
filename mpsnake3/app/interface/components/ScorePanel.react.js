@@ -8,11 +8,16 @@ function getStateFromStores() {
 		scores: ScoreStore.getScores(),
 		scoresByTeam: ScoreStore.getScoresByTeam(),
 		localPlayer: ScoreStore.getPlayer(),
-		localName: ScoreStore.getPlayerName()
+		gameRule: ScoreStore.getGameRule()
 	};
 }
 
 var ScorePanel = React.createClass({
+	getDefaultProps: function() {
+		return {
+			rules: ScoreStore.getRules()
+		}
+	},
 
 	getInitialState: function() {return getStateFromStores();},
 	componentDidMount: function() {ScoreStore.addChangeListener(this._onChange);},
@@ -20,11 +25,14 @@ var ScorePanel = React.createClass({
 	_onChange: function() {this.setState(getStateFromStores());},
 
 	render: function () {
+
+		if (!Object.keys(this.state.scoresByTeam).length) return null;
+
 		var that = this;
 		var teamList = Object.keys(this.state.scoresByTeam).map(function(teamName, index) {
 
 			return (
-				<Team teamName={teamName} localPlayerName={that.state.localName}
+				<Team teamName={teamName} localPlayerName={that.state.localPlayer.name}
 					  teamData={that.state.scoresByTeam[teamName]} key={index} />
 			)
 		});
@@ -42,11 +50,14 @@ var ScorePanel = React.createClass({
 			readyMessage = <p>waiting for all players to ready</p>
 		}
 
+		var gameRule;
+		if (this.state.gameRule) {
+			gameRule = <div className="game-rule">this.rules[this.state.gameRule].name</div>
+		}
+
 		return (
 			<section id="scores" className="panel">
-				<header>
-					<h3>scores</h3>
-				</header>
+				{gameRule}
 				<div className="score-container">
 					<ul>
 						{teamList}

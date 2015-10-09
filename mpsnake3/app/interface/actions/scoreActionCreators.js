@@ -4,7 +4,29 @@ var Dispatcher = require('../dispatcher/dispatcher');
 var Constants = require('../constants/constants');
 var ActionTypes = Constants.ActionTypes;
 
-module.exports = {
+// Expose the action creator to the window allowing our game component to call
+// actions.
+module.exports = window.scoreActionCreator = {
+
+	login: function(data) {
+		Dispatcher.dispatch({
+			type: ActionTypes.LOGIN,
+			data: data
+		})
+	},
+
+	spectate: function(data) {
+		Dispatcher.dispatch({
+			type: ActionTypes.SPECTATE
+		})
+	},
+
+	setReadyStatus: function(isReady) {
+		Dispatcher.dispatch({
+			type: ActionTypes.SET_READY_STATUS,
+			isReady: isReady
+		})
+	},
 
 	updateScores: function(scores) {
 		Dispatcher.dispatch({
@@ -13,30 +35,16 @@ module.exports = {
 		});
 	},
 
-	setTeam: function(teamName) {
-		Dispatcher.dispatch({
-			type: ActionTypes.SET_TEAM,
-			teamName: teamName
-		});
-	},
-
-	setColor: function(color) {
-		Dispatcher.dispatch({
-			type: ActionTypes.SET_COLOR,
-			color: color
-		});
-	},
-
-	receiveBoardState: function(boardState) {
-		Dispatcher.dispatch({
-			type: ActionTypes.BOARD_STATE_RECEIVED,
-			state: boardState
-		});
-	},
-
 	setGameOver: function () {
 		Dispatcher.dispatch({
 			type: ActionTypes.SET_GAME_OVER
+		});
+	},
+
+	setGameRule: function (rule) {
+		Dispatcher.dispatch({
+			type: ActionTypes.SET_GAME_RULE,
+			rule: rule
 		});
 	}
 

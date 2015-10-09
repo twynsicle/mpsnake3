@@ -3,15 +3,17 @@
 var React = require('react');
 window.React = React;
 
-var AccountPanel = require('./components/AccountPanel.react');
+var LoginPanel = require('./components/LoginPanel.react.js');
 var ScorePanel = require('./components/ScorePanel.react');
+var ControlPanel = require('./components/ControlPanel.react.js');
 React.render(
 	<div className="homepage content">
 		<div className="main">
 			<section className="game" id="game"></section>
+			<LoginPanel/>
 		</div>
 		<aside>
-			<AccountPanel/>
+			<ControlPanel />
 			<ScorePanel/>
 		</aside>
 	</div>,

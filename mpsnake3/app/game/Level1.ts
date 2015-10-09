@@ -7,6 +7,18 @@
 /// <reference path="utils/Enums.ts" />
 /// <reference path="utils/Vec2.ts" />
 ///<reference path="managers\SnakeManager.ts"/>
+/*
+//TODO move these somewhere meaningful.
+interface ObjectConstructor {
+	observe(o: any, callback: Function): any;
+}
+
+interface ArrayConstructor {
+	observe(o: any, callback: Function): any;
+}
+
+declare var userDetails: any[];
+*/
 
 module MPSnake {
 
@@ -37,15 +49,14 @@ module MPSnake {
 
 			// Spawn Snakes
 
-			Global.snakeManager.createLocalPlayer({
+			/*Global.snakeManager.createLocalPlayer({
 				color: Random.generateHex(),
-				segmentPositions: [],
 				headPosition: null,
 				name: 'derp',
 				startingPosition: Global.getEmptyCell(),
 				isAI: false,
 				snakeLength: Global.SNAKE_INITIAL_LENGTH
-			});
+			});*/
 			//TODO wait until a) player requests, be other snake position recieved
 			//TODO check all spawn squares.
 			//var startingPos:Vec2 = Global.getEmptyCell();
@@ -53,22 +64,61 @@ module MPSnake {
 			//Global.localSnake = new Snake(this.game, startingPos, Global.SNAKE_INITIAL_LENGTH, '#00FF00');
 			//TODO send snake to everyone registered  -they can double check based on client id.
 
+			// Check session storage for user details.
+			// This allows us to both persist this across sessions and communicate between
+			// the interface and game components.
+			var userDetails = sessionStorage.getItem('user-details');
+			userDetails = JSON.parse(userDetails);
 
+			// Convert game rule provided as string to GameRule enum.
+			var rule:GameRule;
+			switch (userDetails.rule) {
+				case 'last-team':
+					rule = GameRule.LAST_TEAM;
+					break;
+				case 'last-snake':
+					rule = GameRule.LAST_SNAKE;
+					break;
+				case 'first-snake':
+					rule = GameRule.FIRST_SNAKE_15;
+					break;
+				default:
+					rule = GameRule.LAST_SNAKE;
+			}
+
+			if (userDetails) {
+				console.log('creating snake');
+				Global.snakeManager.createLocalPlayer({
+					color: userDetails.color || Random.generateHex(),
+					headPosition: null,
+					name: userDetails.name || Random.generateString(4),
+					team: userDetails.team || 'no team',
+					startingPosition: Global.getEmptyCell(),
+					isAI: userDetails.isAI || false,
+					snakeLength: Global.SNAKE_INITIAL_LENGTH,
+					isReady: false,
+					rule: rule
+				});
+			}
+
+			// Monitor controls for when ready status changes.
+			$('body').on('click', '.ready button', function() {
+				if ($(this).val() === 'ready') {
+					console.log('ready');
+					Global.snakeManager.localPlayer.setReady(true, true);
+				} else {
+					Global.snakeManager.localPlayer.setReady(false, true);
+				}
+			});
 
 			$(document).on('keydown', (event:JQueryEventObject) => {
-				if (event.which === 32) {
-					if (Global.gameState === GameState.STARTED) {
-						Global.gameState = GameState.READY;
+				if (event.which === 32) { // spacebar
+					if (Global.round.gameState === GameState.STARTED) {
+						Global.round.gameState = GameState.READY;
 					} else {
-						Global.gameState = GameState.STARTED;
-						// Setup gamestate.
-						// Create fruit
-						Global.setGameData({
-							gameState: GameState.STARTED,
-							fruitPosition: Global.getEmptyCell()
-						});
+						Global.round.gameState = GameState.STARTED;
 					}
-					$(window).trigger('updateGameState');
+					Global.round.broadcastRoundData();
 					return false;
 				}
 			});
@@ -82,7 +132,7 @@ module MPSnake {
 
 			if ((new Date().getTime() - this.lastUpdate) > this.timeBetweenUpdates) {
 
-				if (Global.gameState === GameState.STARTED) {
+				if (Global.round && Global.round.gameState === GameState.STARTED) {
 
 					if (Global.pathMapDirty) {
 						Global.rebuildPathMap();
@@ -91,6 +141,43 @@ module MPSnake {
 					Global.easyStar.calculate();
 
 					Global.snakeManager.update();
+
+					Global.round.update();
+					//
+					// Check round finish conditions.
+					//
+					var roundEnd = false;
+
+					// All but one snake is inactive.
+					/*var activeSnakes = 0;
+					if (!Global.snakeManager.localPlayer.isInactive)  {
+						activeSnakes += 1;
+					}
+					_.each(Global.snakeManager.remotePlayers, (snake:Snake) => {
+						if (!snake.isInactive) {
+							activeSnakes += 1;
+						}
+					});
+					if (activeSnakes <= 1) {
+						roundEnd = true;
+					}*/
+
+					// The local player is the only player left in the game.
+					// Disable this for testing.
+					/*var snakeCount = 0;
+					_.each(Global.snakeManager.remotePlayers, (snake:Snake) => {
+						snakeCount += 1;
+					});
+					if (!snakeCount) {
+						roundEnd = true;
+					}*/
+
+					if (roundEnd) {
+						Global.round.gameState = GameState.READY;
+						console.log('game over');
+						//TODO victory message.
+					}
+
 				}
 
 				this.lastUpdate = (new Date().getTime());

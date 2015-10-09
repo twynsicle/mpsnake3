@@ -19,14 +19,13 @@
 			padding:  0 1.3rem 0 0;
 			font-family: 'Playball', cursive;
 			color: $dark-color-light;
-			background-color: $dark-color-dark;
+			//background-color: $dark-color-dark;
 			height: 4rem;
 			line-height: 2.7;
 		}
 
 	}
 }
-
 
 // Tablet
 @media (min-width: 768px) {
@@ -50,10 +49,4 @@
 		}
 	}
 
-	div.dark {
-		background-color: $dark-color-dark;
-		height: 4rem;
-		position: absolute; left: 0; top: 0;
-		width: calc(50% - 700px + 2rem);
-	}
 }

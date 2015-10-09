@@ -7,26 +7,38 @@ var CHANGE_EVENT = 'change';
 
 var Constants = require('../constants/constants');
 var ActionTypes = Constants.ActionTypes;
+var PlayerState = Constants.PlayerState;
 
-var colors = {
-	lemons: ['#FFEA00', '#FFD600', '#FFC400', '#FFAB00'],
-	ai: ['#FF9E80', '#FF6E40', '#FF3D00', '#DD2C00'],
-	biebs: ['#4FC3F7', '#03A9F4', '#0288D1', '#01579B'],
-	giants: ['#66BB6A', '#43A047', '#2E7D32', '#1B5E20'],
-	illuminati: ['#B388FF', '#7C4DFF', '#651FFF', '#6200EA'],
-	ops: ['#4DB6AC', '#009688', '#00796B', '#004D40']
+// Constants
+var teams = ['lemons', 'ai', 'biebs', 'giants', 'illuminati', 'ops'];
+var rules = [
+	{name: 'Last team standing', value: 'last-team'},
+	{name: 'Last snake standing', value: 'last-snake'},
+	{name: 'First snake to 15 length', value: 'first-snake'}
+];
+
+// New
+var game;
+var playerState = PlayerState.PENDING;
+// Player data object.
+var localPlayer = {
+	name: '',
+	team: '',
+	color: '',
+	isAI: false,
+	ready: false,
+	score: null,
+	rule: ''
 };
+var gameRule;
 
+// Old
 var isAuthenticated = false;
 var gameInProgress = false;
 var scores = [];
-var scoresByTeam = [];
+var scoresByTeam = {};
 var name = '';
-var localPlayer = {
-	ready: false,
-	team: '',
-	color: ''
-};
+
 
 var ScoreStore = assign({}, EventEmitter.prototype, {
 	init: function() {
@@ -37,11 +49,24 @@ var ScoreStore = assign({}, EventEmitter.prototype, {
 		this.emitChange()
 	},
 
-	getPlayer: function() {
-		return localPlayer;
+
+	login: function(data) {
+
+		sessionStorage.setItem('user-details', JSON.stringify(data));
+
+		localPlayer = _.merge(localPlayer, data);
+		playerState = PlayerState.PLAYING;
+
+		game = new MPSnake.Game();
+
+		//TODO do we want to persist details?
 	},
-	getPlayerName: function() {
-		return name;
+	spectate: function () {
+
+		sessionStorage.clear();
+
+		playerState = PlayerState.SPECTATING;
+		game = new MPSnake.Game();
 	},
 
 	getScores: function() {
@@ -51,60 +76,70 @@ var ScoreStore = assign({}, EventEmitter.prototype, {
 		return scoresByTeam;
 	},
 	setScores: function(scoreData) {
-		scores = scoreData;
 
-		for (var name in scoreData) {
-			if (!scoreData.hasOwnProperty(name)) {
-				continue;
-			}
-			//TODO note - this won't removed any players/teams not in scoreData.
-			var p = scoreData[name];
-			if (!scoresByTeam[p.team]) {
-				scoresByTeam[p.team] = {}
-			}
-			if (!scoresByTeam[p.team][name]) {
-				scoresByTeam[p.team][name] = {};
-			}
-			scoresByTeam[p.team][name] = p;
+		// Sort score data into teams for display.
+		_.each(scoreData, function(snake) {
+			// Rename snake properties to a format that makes more sense for the interface.
+			snake.active = !snake.isInactive;
+			snake.score = snake.snakeLength;
+			snake.ready = snake.isReady;
 
+
+			//TODO note - this won't removed any players/teams not in scoreData - add removed flag and style faded out.
+			if (!scoresByTeam[snake.team]) {
+				scoresByTeam[snake.team] = {}
+			}
+			if (!scoresByTeam[snake.team][snake.name]) {
+				scoresByTeam[snake.team][snake.name] = {};
+			}
+			scoresByTeam[snake.team][snake.name] = snake;
+		});
+
+		// Also store score on local player so we don't need to pass references to the entire
+		// score object around.
+		if (playerState === PlayerState.PLAYING) {
+			localPlayer.score = scoresByTeam[localPlayer.team][localPlayer.name].score;
 		}
 	},
 
-	isAuthenticated: function() {
-		return isAuthenticated;
+	getGameRule: function(){
+		return gameRule;
 	},
-	setAuthentication: function (response) {
-		if (response.auth) {
-			name = response.name;
-			localStorage.setItem('name', response.name);
-		}
-		//TODO pull player data straight from server.
-		isAuthenticated = response.auth;
-	},
-
-	gameInProgress: function () {
-		return gameInProgress;
-	},
-	setGameInProgress: function(state) {
-		if (state && !gameInProgress) {
-			gameInProgress = true;
-		} else if (!state && gameInProgress) {
-			gameInProgress = false;
-		}
+	setGameRule: function(rule) {
+		gameRule = rule;
+		console.log('setting game rule');
 	},
 
 	getTeams: function() {
-		return ['lemons', 'ai', 'biebs', 'giants', 'illuminati', 'ops'];
+		return teams;
 	},
-	setTeam: function(teamName) {
-		localPlayer.team = teamName;
+	getRules: function() {
+		return rules;
 	},
+
 
 	getColors: function(teamName) {
 		return colors[teamName];
 	},
 	setColor: function(color) {
 		localPlayer.color = color;
+	},
+
+
+	getPlayer: function() {
+		return localPlayer;
+	},
+
+
+	getPlayerState: function() {
+		return playerState;
+	},
+	getGameInProgress: function () {
+		return gameInProgress;
+	},
+
+	setReadyStatus: function (isReady) {
+		localPlayer.ready = isReady;
 	},
 
 	emitChange: function() {
@@ -123,38 +158,31 @@ ScoreStore.dispatchToken = Dispatcher.register(function(action) {
 
 	switch(action.type) {
 
-		case ActionTypes.AUTH_RESPONSE:
-			//console.log('store received auth action');
-			ScoreStore.setAuthentication(action.response);
-			ScoreStore.init();
-			ScoreStore.emitChange();
-			break;
 		case ActionTypes.UPDATE_SCORES:
-			// Update stored local player info with info from server.
-			if (isAuthenticated && name) {
-				localPlayer = action.scores[name];
-			}
-
-			// Update scores
-			console.log('scores updated', action.scores);
 			ScoreStore.setScores(action.scores);
 			ScoreStore.emitChange();
 			break;
-		case ActionTypes.SET_TEAM:
-			ScoreStore.setTeam(action.teamName);
-			ScoreStore.emitChange();
-			break;
-		case ActionTypes.SET_COLOR:
-			ScoreStore.setColor(action.color);
-			ScoreStore.emitChange();
-			break;
-		case ActionTypes.BOARD_STATE_RECEIVED:
-			ScoreStore.setGameInProgress(true);
-			ScoreStore.emitChange();
-			break;
 		case ActionTypes.SET_GAME_OVER:
+				//TODO
 			ScoreStore.setGameInProgress(false);
 			ScoreStore.emitChange();
+			break;
+		case ActionTypes.LOGIN:
+			ScoreStore.login(action.data);
+			ScoreStore.emitChange();
+			break;
+		case ActionTypes.SPECTATE:
+			ScoreStore.spectate();
+			ScoreStore.emitChange();
+			break;
+		case ActionTypes.SET_READY_STATUS:
+			ScoreStore.setReadyStatus(action.isReady);
+			ScoreStore.emitChange();
+			break;
+		case ActionTypes.SET_GAME_RULE:
+			ScoreStore.setGameRule(action.rule);
+			ScoreStore.emitChange();
+			break;
 		// Reset game clears both score containers.
 		default:
 		// do nothing

@@ -1,9 +1,9 @@
-
+/*
 [type=text] {
 	font-size: 1.3rem;
 	padding: 0.3rem;
 	width: 100%;
-}
+}*/
 
 .radio-input {
 
@@ -21,7 +21,30 @@
 	}
 }
 
+.color-input {
 
+	input[type=color] {
+		position: absolute; left: -9999px;
+	}
+	label {
+		width: 100%;
+		height: 50px;
+		border-radius: 3px;
+		display: inline-block;
+		line-height: 2.6;
+		color: #EEE;
+		text-shadow: 0 0 5px rgba(0,0,0,0.3);
+		font-size: 1.2rem;
+	}
+}
+
+.checkbox-input {
+	[type=checkbox] {
+		//position: absolute; left: -9999px;
+	}
+	label {
+	}
+}
 
 // Tablet
 @media (min-width: 768px) {

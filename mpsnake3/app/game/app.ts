@@ -3,6 +3,6 @@
 
 window.onload = () => {
 
-    var game = new MPSnake.Game();
+    //var game = new MPSnake.Game();
 
 };

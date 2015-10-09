@@ -8,6 +8,7 @@
 /// <reference path="../utils/Random.ts" />
 /// <reference path="../utils/Vec2.ts" />
 ///<reference path="ISnakeData.ts"/>
+///<reference path="Round.ts"/>
 
 
 module MPSnake {
@@ -18,91 +19,112 @@ module MPSnake {
 
 		sprites:Phaser.Group;
 
+		startingPosition:Vec2;
+
 		headPosition:Vec2;
 		segments:Phaser.Sprite[] = [];
 		segmentPositions:Vec2[] = [];
 		color: string;
 		name: string;
+		team: string;
 		length:number;
 		direction:Directions = Directions.DOWN;
 		isAI: boolean;
 		isRemote: boolean;
+		isReady: boolean;
+
+		votedRule:GameRule;
+
+		startingData:SnakeData; //Save this in case we need to reset the snake between games.
 
 		isInactive: boolean = false;
 
 		//constructor(game:Phaser.Game, startingPosition:Vec2, length:number, color:string) {
 		constructor(game:Phaser.Game, isRemote:boolean, data:SnakeData) {
 			this.game = game;
+			this.startingPosition = data.startingPosition;
 			this.isRemote = isRemote;
 			this.color = data.color;
 			this.name = data.name;
+			this.team = data.team;
 			this.length = data.snakeLength;
 			this.isAI = data.isAI;
+			this.isReady = data.isReady;
+
+			this.votedRule = data.rule;
+
+			this.startingData = data;
 
 			this.sprites = game.add.group();
+		}
 
-			if (isRemote) {
-				this.segmentPositions = data.segmentPositions;
-				_.each(this.segmentPositions, (pos) => {
-					var sprite = this.createCell(pos, this.color);
-					this.segments.push(sprite);
-					this.game.add.existing(sprite);
-				});
-			} else {
-				// Setup body.
-				// We generate an extra cell to use as the placeholder for new segments.
-				_.times(this.length + 1, (i) => {
 
-					var tilePos = new Vec2(data.startingPosition.x, data.startingPosition.y + i);
-					tilePos.wrapToBoard();
-					this.segmentPositions.push(tilePos);
-					var sprite = this.createCell(tilePos, this.color);
-					this.segments.push(sprite);
-					this.game.add.existing(sprite);
-				});
-				this.headPosition = this.segmentPositions[this.segmentPositions.length - 1];
+		private buildLocalSnake ():void {
 
-				// Controls.
-				// We want to ignore any direction changes that would mean the snakes head
-				// would do a 180 and run into  itself.
-				$(document).on('keydown', (event:JQueryEventObject) => {
-					var newDirection;
-					switch (event.keyCode) {
-						case 37: // left
-							if (this.direction !== Directions.RIGHT) {
-								this.direction = Directions.LEFT;
-								return false;
-							}
-							break;
-						case 39: // right
-							if (this.direction !== Directions.LEFT) {
-								this.direction = Directions.RIGHT;
-								return false;
-							}
-							break;
-						case 38: // up
-							if (this.direction !== Directions.DOWN) {
-								this.direction = Directions.UP;
-								return false;
-							}
-							break;
-						case 40: //down
-							if (this.direction !== Directions.UP) {
-								this.direction = Directions.DOWN;
-								return false;
-							}
-							break;
-						default:
-							break;
-					}
+			// Generate an extra cell to use as the placeholder for new segments.
+			_.times(this.length + 1, (i) => {
 
-				});
-			}
+				var tilePos = new Vec2(this.startingPosition.x, this.startingPosition.y + i);
+				tilePos.wrapToBoard();
+				this.segmentPositions.push(tilePos);
+				var sprite = this.createCell(tilePos, this.color);
+				this.segments.push(sprite);
+				this.game.add.existing(sprite);
+			});
+			this.headPosition = this.segmentPositions[this.segmentPositions.length - 1];
 
 			// Force pathmap to update with new snakes positions.
 			Global.setPathMapDirty();
 		}
 
+
+		private buildRemoteSnake (segmentPositions:Vec2[]):void {
+			this.segmentPositions = segmentPositions;
+			_.each(this.segmentPositions, (pos) => {
+				var sprite = this.createCell(pos, this.color);
+				this.segments.push(sprite);
+				this.game.add.existing(sprite);
+			});
+
+			// Force pathmap to update with new snakes positions.
+			Global.setPathMapDirty();
+		}
+
+
+		private bindControls ():void {
+			// We want to ignore any direction changes that would mean the snakes head
+			// would do a 180 and run into  itself.
+			$(document).on('keydown', (event:JQueryEventObject) => {
+				switch (event.keyCode) {
+					case 37: // left
+						if (this.direction !== Directions.RIGHT) {
+							this.direction = Directions.LEFT;
+							return false;
+						}
+						break;
+					case 39: // right
+						if (this.direction !== Directions.LEFT) {
+							this.direction = Directions.RIGHT;
+							return false;
+						}
+						break;
+					case 38: // up
+						if (this.direction !== Directions.DOWN) {
+							this.direction = Directions.UP;
+							return false;
+						}
+						break;
+					case 40: //down
+						if (this.direction !== Directions.UP) {
+							this.direction = Directions.DOWN;
+							return false;
+						}
+						break;
+					default:
+						break;
+				}
+			});
+		}
 
 		private createCell(tilePos:Vec2, color:string):Phaser.Sprite {
 			var bitmap = new Phaser.BitmapData(this.game, Random.guid(), Global.CELL_HEIGHT, Global.CELL_HEIGHT);
@@ -159,12 +181,12 @@ module MPSnake {
 
 
 		public increaseLength() {
+			this.length += 1;
+			this.segments[0] = this.createCell(this.segmentPositions[0], this.color);
+
 			if (!this.isRemote) {
 				$(window).trigger('updateSnake', [{updateType: UpdateType.INCREASE_LENGTH}]);
 			}
-
-			this.length += 1;
-			this.segments[0] = this.createCell(this.segmentPositions[0], this.color);
 		}
 
 
@@ -181,11 +203,12 @@ module MPSnake {
 			}
 
 			// Check for collision with fruit
-			if (newHeadPosition.x === Global.fruit.pos.x && newHeadPosition.y === Global.fruit.pos.y) {
+			var fruitPosition = Global.round.getFruitPosition();
+			if (newHeadPosition.x === fruitPosition.x && newHeadPosition.y === fruitPosition.y) {
 				this.increaseLength();
 
-				Global.fruit.respawn();
-				$(window).trigger('updateGameState');
+				Global.round.fruit.respawn();
+				Global.round.broadcastRoundData();
 			}
 
 			// Check for collisions with other snakes.
@@ -252,7 +275,7 @@ module MPSnake {
 
 		update() {
 
-			// Remote snakes are updated from the broadcasted results, rather than
+			// Remote snakes are updated from the broadcast results, rather than
 			// determining their behavior locally.
 			if (this.isRemote) {
 				return;
@@ -300,11 +323,12 @@ module MPSnake {
 				}
 			} else {
 				var promises = [];
-				promises.push(this.findPath(this.headPosition, Global.fruit.pos));
+				var fruitPosition = Global.round.getFruitPosition();
+				promises.push(this.findPath(this.headPosition, fruitPosition));
 				Q.all(promises).then((paths:Vec2[][]) => {
 					if (paths.length && paths[0] && paths[0].length > 1) {
 						var newHeadPosition:Vec2;
-						
+
 						// Find current head position in best path - we need to check since the path might not have updated in time.
 						for (var i = 0; i < paths[0].length; i += 1) {
 							if (paths[0][i].x === this.headPosition.x && paths[0][i].y === this.headPosition.y) {
@@ -326,26 +350,111 @@ module MPSnake {
 		}
 
 
-		public getData():SnakeData {
-			//TODO name
+		/**********************************************************************
+		 * Creation and destruction
+		 *********************************************************************/
+
+		public destroy():void {
+			_.each(this.segments, (sprite:Phaser.Sprite) => {
+				sprite.destroy();
+			});
+			this.segmentPositions = [];
+			this.segments = [];
+			Global.setPathMapDirty();
+		}
+
+		public syncRemoteSnake():void {
+
+		}
+
+		public reset():void {
+			if (this.isRemote) {
+				console.log('remote snakes need to be re-synced instead.');
+				return;
+			}
+			this.color = this.startingData.color;
+			this.length = this.startingData.snakeLength;
+			this.direction = Directions.DOWN; //TODO add direction to sync data.
+
+			this.destroy();
+			this.buildLocalSnake();
+
+			// window.trigger('syncSnake')
+			//TODO hmmm, this will also involve a reset of the snakes remote data.
+			//send remote data + position data.
+		}
+
+		public static createRemoteSnake(game:Phaser.Game, snakeData:SnakeData, segmentPositions:Vec2[]):Snake {
+			var snake:Snake = new Snake(game, true, snakeData);
+			snake.buildRemoteSnake(segmentPositions);
+			return snake;
+		}
+
+
+		public static createLocalSnake(game:Phaser.Game, snakeData:SnakeData):Snake {
+			var snake:Snake = new Snake(game, false, snakeData);
+			snake.buildLocalSnake();
+			snake.bindControls();
+			return snake;
+		}
+
+
+		/**********************************************************************
+		 * Access
+		 *********************************************************************/
+
+		//TODO make this a specific transfer format?
+		public getData():any {
+			//TODO isInactive should probably be included in this?
 			return {
 				color: this.color,
 				segmentPositions: this.segmentPositions,
 				snakeLength: this.length,
 				headPosition: this.headPosition,
 				name: this.name,
-				startingPosition: null,
-				isAI: this.isAI
-
+				team: this.team,
+				startingPosition: this.startingPosition,
+				isAI: this.isAI,
+				isReady: this.isReady
 			};
 		}
 
-
-		public destroy():void {
-			_.each(this.segments, (sprite:Phaser.Sprite) => {
-				sprite.destroy();
-			});
+		public getScoreData():any {
+			return {
+				color: this.color,
+				snakeLength: this.length,
+				name: this.name,
+				team: this.team,
+				isReady: this.isReady,
+				isInactive: this.isInactive
+			}
 		}
+
+
+		public getSegmentPositions():Vec2[] {
+			return this.segmentPositions;
+		}
+
+		public setReady(isReady:boolean, notify:boolean):void {
+			this.isReady = isReady;
+			console.log('set ready:', isReady);
+
+			if (this.isReady && notify) {
+				$(window).trigger('updateSnake', [{updateType: UpdateType.CHANGE_READY, isReady: this.isReady}]);
+
+				var allReady = Global.snakeManager.checkPlayersReady();
+				if (allReady) {
+					// Start Game.
+					Global.round = new Round();
+					Global.round.broadcastRoundData();
+				}
+			}
+		}
+
+
+		/**********************************************************************
+		 * Logging
+		 *********************************************************************/
 
 		private logPositions():void {
 			var out = this.segmentPositions.map(function(pos) {return pos.toString()});

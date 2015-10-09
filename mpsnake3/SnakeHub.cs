@@ -22,14 +22,14 @@ namespace mpsnake3 {
 			Clients.OthersInGroup(group).requestSnake(clientId);
 		}
 
-		public void SendSnake(string toClientId, string data) {
+		public void SendSnake(string toClientId, string data, string positionData) {
 			var fromClientId = GetClientId();
-			Clients.Client(toClientId).receiveNewSnake(fromClientId, data);
+			Clients.Client(toClientId).receiveNewSnake(fromClientId, data, positionData);
 		}
 
-		public void SendSnakeToAll(string group, string data) {
+		public void SendSnakeToAll(string group, string data, string positionData) {
 			var clientId = GetClientId();
-			Clients.OthersInGroup(group).receiveNewSnake(clientId, data);
+			Clients.OthersInGroup(group).receiveNewSnake(clientId, data, positionData);
 		}
 
 		public void RemoveSnake (string group) {

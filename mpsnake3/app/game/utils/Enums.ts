@@ -2,29 +2,36 @@
 
 module MPSnake {
 
-	export enum Directions {
+	export const enum Directions {
 		UP,
 		DOWN,
 		LEFT,
 		RIGHT
 	}
 
-	export enum GameState {
-		READY,
-		STARTED,
-		ENDED
+	export const enum GameState {
+		READY = 0,
+		STARTED = 1,
+		ENDED = 2
 	}
 
-	export enum UpdateType {
-		MOVE,
-		INCREASE_LENGTH,
-		COLLIDE_PLAYER
+	export const enum UpdateType {
+		MOVE = 0,
+		INCREASE_LENGTH = 1,
+		COLLIDE_PLAYER = 2,
+		CHANGE_READY = 3
 	}
 
-	export enum PathMapContents {
+	export const enum PathMapContents {
 		EMPTY,
 		LOCAL_SNAKE,
 		REMOTE_SNAKE,
 		LOCAL_HEAD
+	}
+
+	export enum GameRule {
+		LAST_TEAM,
+		LAST_SNAKE,
+		FIRST_SNAKE_15
 	}
 }

@@ -43,17 +43,30 @@ module MPSnake {
 			});
 			$(window).on('playerCreated', (event:JQueryEventObject) => {
 				var snakeData = Global.snakeManager.localPlayer.getData();
-				this.proxy.invoke('SendSnakeToAll', this.group, JSON.stringify(snakeData));
+				var positionData = Global.snakeManager.localPlayer.getSegmentPositions();
+				this.proxy.invoke('SendSnakeToAll', this.group, JSON.stringify(snakeData), JSON.stringify(positionData));
+				Global.updateInterface();
 			});
 			$(window).on('playerLeft', (event:JQueryEventObject) => {
 				this.proxy.invoke('RemoveSnake', this.group);
 			});
 			// Game state.
 			$(window).on('updateSnake', (event:JQueryEventObject, data) => {
+				if (!Global.snakeManager.localPlayer) return;
+
 				this.proxy.invoke('UpdateSnake', this.group, JSON.stringify(data));
+
+				// Update interface.
+				if (data.updateType === UpdateType.INCREASE_LENGTH ||
+						data.updateType === UpdateType.COLLIDE_PLAYER ||
+						data.updateType === UpdateType.CHANGE_READY) {
+					Global.updateInterface();
+				}
 			});
 			$(window).on('updateGameState', (event:JQueryEventObject) => {
-				var data = Global.getGameData();
+				if (!Global.snakeManager.localPlayer) return;
+
+				var data = Global.round.getRoundData();
 				this.proxy.invoke('UpdateGameState', this.group, JSON.stringify(data));
 			});
 
@@ -65,34 +78,50 @@ module MPSnake {
 		 * Outbound
 		 *********************************************************************/
 		wireEventListeners():void {
-			// Player Managemen.
+			// Player Management.
 			this.proxy.on("registerResponse", (clientId:string) => {
 				this.clientId = clientId;
 				$(window).trigger('registered');
 			});
+			// Another player has requested information about all snakes.
 			this.proxy.on("requestSnake", (clientId:string) => {
 				console.log('snake requested, sending to ', clientId);
-				//TODO this can be a method of the snake object
-				var snakeData = Global.snakeManager.localPlayer.getData();
-				this.proxy.invoke('SendSnake', clientId, JSON.stringify(Global.snakeManager.localPlayer.getData()));
+				if (Global.snakeManager.localPlayer) {
+					var snakeData = Global.snakeManager.localPlayer.getData();
+					var positionData = Global.snakeManager.localPlayer.getSegmentPositions();
+					this.proxy.invoke('SendSnake', clientId, JSON.stringify(snakeData), JSON.stringify(positionData));
+				}
 			});
-			this.proxy.on("receiveNewSnake", (clientId:string, snakeData:string) => {
-				var data = JSON.parse(snakeData);
-				Global.snakeManager.addRemotePlayer(clientId, data);
-				console.log('snake received', data);
+			this.proxy.on("receiveNewSnake", (clientId:string, snakeData:string, segmentData:string) => {
+				Global.snakeManager.addRemotePlayer(clientId, JSON.parse(snakeData), JSON.parse(segmentData));
+				console.log('snake received', snakeData);
+				Global.updateInterface();
 			});
 			this.proxy.on("removeSnake", (clientId:string) => {
 				Global.snakeManager.removePlayer(clientId);
 				console.log('snake has left the game ', clientId);
+				Global.updateInterface();
 			});
 			// Game State.
 			this.proxy.on("updateSnake", (clientId:string, data:string) => {
-				//TODO we are recieving twice as many of these packets as we want
-				Global.snakeManager.updateRemoteSnake(clientId, JSON.parse(data));
+				//TODO we are receiving twice as many of these packets as we want
+				var snakeData = JSON.parse(data);
+				Global.snakeManager.updateRemoteSnake(clientId, snakeData);
+				if (snakeData.updateType === UpdateType.INCREASE_LENGTH ||
+						snakeData.updateType === UpdateType.COLLIDE_PLAYER ||
+						snakeData.updateType === UpdateType.CHANGE_READY) {
+					Global.updateInterface();
+				}
 			});
 			this.proxy.on("updateGameState", (data:any) => {
-				//TODO we are recieving twice as many of these as we want
-				Global.setGameData(JSON.parse(data));
+				data = JSON.parse(data);
+				console.log(data);
+				if (!Global.round) {
+					Global.round = new Round(data)
+				} else {
+					Global.round.updateRoundData(data);
+				}
+				Global.updateInterface();
 			});
 
 		}

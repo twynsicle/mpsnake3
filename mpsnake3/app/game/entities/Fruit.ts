@@ -21,7 +21,7 @@ module MPSnake {
 		// TODO we only want to spawn this when the game starts.
 		constructor(game:Phaser.Game, startingPosition: Vec2) {
 			this.game = game;
-			this.pos = startingPosition;
+			this.pos = new Vec2(startingPosition.x, startingPosition.y);
 
 			this.sprite = this.createCell();
 			this.sprite.x = this.pos.toPoint().x;
@@ -30,8 +30,12 @@ module MPSnake {
 			this.game.add.existing(this.sprite);
 		}
 
-		public respawn():void {
-			this.pos = Global.getEmptyCell();
+		public respawn(newPosition?:Vec2):void {
+			if (newPosition) {
+				this.pos = new Vec2(newPosition.x, newPosition.y);
+			} else {
+				this.pos = Global.getEmptyCell();
+			}
 			this.sprite.x = this.pos.toPoint().x;
 			this.sprite.y = this.pos.toPoint().y;
 		}
