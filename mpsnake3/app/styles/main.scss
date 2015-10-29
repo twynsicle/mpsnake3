@@ -31,7 +31,6 @@ body {
     @include container(90%);
     //background-color: white;
 	  padding: 1rem 1rem 0;
-    min-height: 1000px;
   }
 }
 
@@ -78,7 +77,7 @@ body {
 @media (min-width: 768px) {
   .page {
     .content {
-	    padding: 5rem 2rem 0;
+	    padding: 2rem 2rem 0;
     }
   }
 }

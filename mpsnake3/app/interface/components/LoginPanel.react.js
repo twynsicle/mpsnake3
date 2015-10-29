@@ -17,8 +17,8 @@ var LoginPanel = React.createClass({
 		return {
 			playerState: ScoreStore.getPlayerState(),
 			name: '',
-			localPlayer: ScoreStore.getPlayer()
-			//name: ScoreStore.getPlayerName() || '' //TODO this doesn't work and will need to react to changes in state
+			localPlayer: ScoreStore.getPlayer(),
+			scores: ScoreStore.getScoresByTeam()
 		};
 	},
 	getDefaultProps: function() {
@@ -41,6 +41,8 @@ var LoginPanel = React.createClass({
 
 	_login: function (event) {
 		event.preventDefault();
+
+		var name = React.findDOMNode(this.refs.name).value;
 
 		ScoreActionCreators.login({
 			name: React.findDOMNode(this.refs.name).value,
@@ -68,40 +70,68 @@ var LoginPanel = React.createClass({
 			backgroundColor: this.state.color
 		};
 
+		// If we're in test mode, pre-populate as many inputs as we can.
+		var testAccount = {};
+		if (location.search.indexOf('test') > -1) {
+			testAccount = _.sample([
+				{name: 'steven',team: 'lemons',rule: 'last-team'},
+				{name: 'francis',team: 'lemons',rule: 'last-team'},
+				{name: 'jaz',team: 'lemons',rule: 'last-team'},
+				{name: 'chris',team: 'biebs',rule: 'last-team'},
+				{name: 'mike',team: 'ai',rule: 'last-team'},
+				{name: 'nik',team: 'ops',rule: 'last-team'},
+				{name: 'geoff',team: 'ops',rule: 'last-team'}
+			]);
+		}
+
+		var ai;
+		if (location.search.indexOf('test') > -1) {
+			ai = (
+				<li className="is-ai fake-checkbox" >
+					<input type="checkbox" id="is-ai" name="is-ai" onChange={this._setAI} tabIndex="5" checked={this.state.isAI} />
+					<label htmlFor="is-ai">
+						<InlineSvg name="tick"/>
+						<span>is ai?</span>
+					</label>
+				</li>
+			);
+		}
+
 		return (
 			<section id="account" className="panel" className={this.state.playerState !== PlayerState.PENDING ? 'panel user-active' : 'panel'}>
 				<div className="login-container">
 					<header>
-						<h2>login</h2>
+						<h2>make snake</h2>
 					</header>
 					<form action="" onSubmit={this._login}>
 						<ul className="account-inputs">
 							<li>
-								<FakeTextInput id="name" className="name" name="name" ref="name" placeholder="name" required="required" />
+								<FakeTextInput id="name" className="name" value={testAccount.name} name="name" ref="name"
+											   tabindex="1"
+											   placeholder="name" required="required" pattern="[A-Za-z-0-9_\-]+"/>
 							</li>
 							<li className="teams">
-								<FakeSelect name="team" initialText="team" options={this.props.teams} required="required"> </FakeSelect>
+								<FakeSelect name="team" value={testAccount.team} initialText="team" options={this.props.teams}
+											tabindex="2"
+											required="required"> </FakeSelect>
 							</li>
 							<li className="color-input">
 								<label ref="colorButton" style={colorButtonStyle}>
 									<span>snake color</span>
-									<input type="color" className="color" name="color" ref="color" onInput={this._changeColor}/>
+									<input type="color" className="color" name="color" ref="color" tabIndex="3" onInput={this._changeColor}/>
 								</label>
 							</li>
+							{ai}
 							<li className="rules">
-								<FakeSelect name="rule" initialText="vote on game rule" options={this.props.rules} required="required"> </FakeSelect>
+								<FakeSelect name="rule" value={testAccount.rule} initialText="vote on game rule"
+											tabindex="4"
+											options={this.props.rules} required="required"> </FakeSelect>
 							</li>
-							<li className="is-ai fake-checkbox" >
-								<input type="checkbox" id="is-ai" name="is-ai" onChange={this._setAI} checked={this.state.isAI} />
-								<label htmlFor="is-ai">
-									<InlineSvg name="tick"/>
-									<span>is ai?</span>
-								</label>
-							</li>
+
 						</ul>
 						<ul className="account-controls">
 							<li>
-								<button className="login" type="submit">login</button>
+								<button className="login" type="submit">play</button>
 							</li>
 							<li>
 								<p className="or">or</p>

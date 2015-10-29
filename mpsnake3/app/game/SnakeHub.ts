@@ -68,6 +68,7 @@ module MPSnake {
 
 				var data = Global.round.getRoundData();
 				this.proxy.invoke('UpdateGameState', this.group, JSON.stringify(data));
+				Global.updateInterface();
 			});
 
 

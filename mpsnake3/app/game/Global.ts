@@ -133,30 +133,13 @@ module MPSnake {
 
 			scoreActionCreator.updateScores(scores);
 			if (Global.round) {
-				scoreActionCreator.setGameRule(Global.round.gameRule);
+				scoreActionCreator.updateRoundData(Global.round.getRoundData());
 			}
 		}
 
 
-		//
-		// GameState
-		//
-		/*static getGameData ():any {
-			return {
-				gameState: Global.gameState,
-				fruitPosition: Global.fruit.pos
-			}
+		public static signalInterfaceRoundEnd(message:any):void {
+			scoreActionCreator.endRound(message);
 		}
-		static setGameData(data:any) {
-			Global.gameState = data.gameState;
-			var fruitPosition = new Vec2(data.fruitPosition.x, data.fruitPosition.y);
-			if (!Global.fruit) {
-				Global.fruit = new Fruit(Global.game, fruitPosition);
-			} else {
-				Global.fruit.destroy();
-				Global.fruit = new Fruit(Global.game, fruitPosition);
-			}
-		}*/
-		
 	}
 }

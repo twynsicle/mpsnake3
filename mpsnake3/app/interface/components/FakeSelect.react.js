@@ -5,7 +5,7 @@ var classNames = require('classnames');
 var FakeSelect = React.createClass({
 	getInitialState: function() {
 		return {
-			selected: false,
+			selected: this.props.value,
 			showErrorHighlight: false
 		}
 	},
@@ -55,12 +55,11 @@ var FakeSelect = React.createClass({
 					</li>
 				)
 			}
-
 		});
 
 		var selected;
 		if (!this.state.selected) {
-			selected = <span>{this.props.initialText}</span>;
+			selected = <li>{this.props.initialText}</li>;
 		} else {
 			selected = (
 				<li className={this.state.selected+ ' option'} data-value={this.state.selected}>
@@ -73,11 +72,15 @@ var FakeSelect = React.createClass({
 			'error-highlight': this.state.showErrorHighlight
 		});
 
+		var tabIndex = this.props.tabindex || -1;
+
 		return (
-			<div className={parentClasses} ref="fakeSelect" tabIndex="-1">
-				<input type="text" name={this.props.name} ref="input" required={this.props.required} > </input>
+			<div className={parentClasses} ref="fakeSelect" tabIndex={tabIndex}>
+				<input type="text" defaultValue={this.props.value} name={this.props.name} ref="input" required={this.props.required} > </input>
 				<div className="selected">
-					{selected}
+					<ul>
+						{selected}
+					</ul>
 				</div>
 				<div className="options">
 					<ul>

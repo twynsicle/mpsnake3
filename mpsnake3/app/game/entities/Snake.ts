@@ -38,6 +38,7 @@ module MPSnake {
 		startingData:SnakeData; //Save this in case we need to reset the snake between games.
 
 		isInactive: boolean = false;
+		roundsPlayed:number = 0;
 
 		//constructor(game:Phaser.Game, startingPosition:Vec2, length:number, color:string) {
 		constructor(game:Phaser.Game, isRemote:boolean, data:SnakeData) {
@@ -95,33 +96,56 @@ module MPSnake {
 			// We want to ignore any direction changes that would mean the snakes head
 			// would do a 180 and run into  itself.
 			$(document).on('keydown', (event:JQueryEventObject) => {
+
+				var originalDirection = this.direction;
+
 				switch (event.keyCode) {
 					case 37: // left
-						if (this.direction !== Directions.RIGHT) {
-							this.direction = Directions.LEFT;
-							return false;
-						}
+						this.direction = Directions.LEFT;
 						break;
 					case 39: // right
-						if (this.direction !== Directions.LEFT) {
-							this.direction = Directions.RIGHT;
-							return false;
-						}
+						this.direction = Directions.RIGHT;
 						break;
 					case 38: // up
-						if (this.direction !== Directions.DOWN) {
-							this.direction = Directions.UP;
-							return false;
-						}
+						this.direction = Directions.UP;
 						break;
 					case 40: //down
-						if (this.direction !== Directions.UP) {
-							this.direction = Directions.DOWN;
-							return false;
-						}
+						this.direction = Directions.DOWN;
 						break;
 					default:
+						// Not an arrow key, we can stop processing and let it through.
+						return true;
+				}
+
+
+				// Prevent snake from colliding with itself.
+				// Find square it is intending to move to.
+				//TODO refactor this into shared code with the actual movement function.
+				var newHeadPosition:Vec2 = new Vec2(_.last(this.segmentPositions).x, _.last(this.segmentPositions).y);
+				switch (this.direction) {
+					case Directions.UP:
+						newHeadPosition.add(0, -1);
 						break;
+					case Directions.DOWN:
+						newHeadPosition.add(0, 1);
+						break;
+					case Directions.LEFT:
+						newHeadPosition.add(-1, 0);
+						break;
+					case Directions.RIGHT:
+						newHeadPosition.add(1, 0);
+						break;
+				}
+				newHeadPosition.wrapToBoard();
+				if (Global.pathMap[newHeadPosition.y][newHeadPosition.x] === PathMapContents.LOCAL_SNAKE){
+
+					this.direction = originalDirection;
+					console.log('self collision prevented');
+					return false;
+				}
+
+				if (Global.round && Global.round.gameState === GameState.STARTED) {
+					return false;
 				}
 			});
 		}
@@ -363,8 +387,16 @@ module MPSnake {
 			Global.setPathMapDirty();
 		}
 
-		public syncRemoteSnake():void {
+		public resetRemoteSnake(data:SnakeData, segmentData:Vec2[]):void {
 
+			this.color = this.startingData.color;
+			this.length = this.startingData.snakeLength;
+			this.direction = Directions.DOWN; //TODO add direction to sync data.
+			this.isInactive = false;
+
+
+			this.destroy();
+			this.buildRemoteSnake(segmentData);
 		}
 
 		public reset():void {
@@ -374,14 +406,16 @@ module MPSnake {
 			}
 			this.color = this.startingData.color;
 			this.length = this.startingData.snakeLength;
-			this.direction = Directions.DOWN; //TODO add direction to sync data.
+			this.direction = Directions.DOWN;
+			this.isInactive = false;
+
+			this.startingPosition = Global.getEmptyCell();
 
 			this.destroy();
 			this.buildLocalSnake();
 
-			// window.trigger('syncSnake')
-			//TODO hmmm, this will also involve a reset of the snakes remote data.
-			//send remote data + position data.
+			// Send new snake data to other players.
+			$(window).trigger('playerCreated');
 		}
 
 		public static createRemoteSnake(game:Phaser.Game, snakeData:SnakeData, segmentPositions:Vec2[]):Snake {
@@ -439,11 +473,21 @@ module MPSnake {
 			this.isReady = isReady;
 			console.log('set ready:', isReady);
 
+			if (this.isReady) {
+
+				// We will use this as an opportunity to refresh the snake and the
+				// user needs to refresh between rounds.
+				if (this.roundsPlayed > 0) {
+					this.reset();
+				}
+			}
+
 			if (this.isReady && notify) {
 				$(window).trigger('updateSnake', [{updateType: UpdateType.CHANGE_READY, isReady: this.isReady}]);
 
 				var allReady = Global.snakeManager.checkPlayersReady();
 				if (allReady) {
+
 					// Start Game.
 					Global.round = new Round();
 					Global.round.broadcastRoundData();

@@ -35,16 +35,17 @@ module.exports = window.scoreActionCreator = {
 		});
 	},
 
-	setGameOver: function () {
+	updateRoundData: function (roundData) {
 		Dispatcher.dispatch({
-			type: ActionTypes.SET_GAME_OVER
+			type: ActionTypes.UPDATE_ROUND_DATA,
+			roundData: roundData
 		});
 	},
 
-	setGameRule: function (rule) {
+	endRound: function (message) {
 		Dispatcher.dispatch({
-			type: ActionTypes.SET_GAME_RULE,
-			rule: rule
+			type: ActionTypes.END_ROUND,
+			message: message
 		});
 	}
 

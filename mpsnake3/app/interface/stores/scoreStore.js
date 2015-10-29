@@ -16,6 +16,9 @@ var rules = [
 	{name: 'Last snake standing', value: 'last-snake'},
 	{name: 'First snake to 15 length', value: 'first-snake'}
 ];
+var gameState = ['ready', 'started', 'ended'];
+var countPlayers = 0;
+var countReadyPlayers = 0;
 
 // New
 var game;
@@ -30,15 +33,9 @@ var localPlayer = {
 	score: null,
 	rule: ''
 };
-var gameRule;
-
-// Old
-var isAuthenticated = false;
-var gameInProgress = false;
-var scores = [];
+var roundData = {};
 var scoresByTeam = {};
-var name = '';
-
+var resultData = {};
 
 var ScoreStore = assign({}, EventEmitter.prototype, {
 	init: function() {
@@ -69,13 +66,15 @@ var ScoreStore = assign({}, EventEmitter.prototype, {
 		game = new MPSnake.Game();
 	},
 
-	getScores: function() {
-		return scores;
-	},
 	getScoresByTeam: function() {
 		return scoresByTeam;
 	},
 	setScores: function(scoreData) {
+
+		// Rebuild scores from scratch each time so we can removed players that have left.
+		scoresByTeam = {};
+		countPlayers = 0;
+		countReadyPlayers = 0;
 
 		// Sort score data into teams for display.
 		_.each(scoreData, function(snake) {
@@ -84,30 +83,44 @@ var ScoreStore = assign({}, EventEmitter.prototype, {
 			snake.score = snake.snakeLength;
 			snake.ready = snake.isReady;
 
-
-			//TODO note - this won't removed any players/teams not in scoreData - add removed flag and style faded out.
 			if (!scoresByTeam[snake.team]) {
 				scoresByTeam[snake.team] = {}
 			}
-			if (!scoresByTeam[snake.team][snake.name]) {
-				scoresByTeam[snake.team][snake.name] = {};
+			// Since we are clearing the array each time, if we match on snake name, there must be a
+			// duplicate name, currently we cannot prevent this, so will rename the dupe.
+			if (scoresByTeam[snake.team][snake.name]) {
+				snake.name += ' duplicate';
+				scoresByTeam[snake.team][snake.name] = snake;
 			}
 			scoresByTeam[snake.team][snake.name] = snake;
+
+			// While iterating through the scores, we'll perform some calculations to save
+			// going through the data additional times.
+			countPlayers += 1;
+			if (snake.ready) {
+				countReadyPlayers += 1;
+			}
 		});
 
-		// Also store score on local player so we don't need to pass references to the entire
+		//console.log('scores updated', scoresByTeam);
+
+		// Also store details on local player so we don't need to pass references to the entire
 		// score object around.
 		if (playerState === PlayerState.PLAYING) {
 			localPlayer.score = scoresByTeam[localPlayer.team][localPlayer.name].score;
+			localPlayer.ready = scoresByTeam[localPlayer.team][localPlayer.name].isReady;
 		}
 	},
 
-	getGameRule: function(){
-		return gameRule;
+	endRound: function(data) {
+		resultData = data;
 	},
-	setGameRule: function(rule) {
-		gameRule = rule;
-		console.log('setting game rule');
+
+	getRoundData: function(){
+		return roundData;
+	},
+	setRoundData: function(data) {
+		roundData = data;
 	},
 
 	getTeams: function() {
@@ -117,6 +130,9 @@ var ScoreStore = assign({}, EventEmitter.prototype, {
 		return rules;
 	},
 
+	getResultData() {
+		return resultData;
+	},
 
 	getColors: function(teamName) {
 		return colors[teamName];
@@ -134,12 +150,19 @@ var ScoreStore = assign({}, EventEmitter.prototype, {
 	getPlayerState: function() {
 		return playerState;
 	},
-	getGameInProgress: function () {
-		return gameInProgress;
-	},
 
 	setReadyStatus: function (isReady) {
 		localPlayer.ready = isReady;
+
+		// Clear result message fresh for new game.
+		resultData = {};
+	},
+
+	getCountPlayers () {
+		return countPlayers;
+	},
+	getCountReadyPlayers () {
+		return countReadyPlayers;
 	},
 
 	emitChange: function() {
@@ -162,11 +185,6 @@ ScoreStore.dispatchToken = Dispatcher.register(function(action) {
 			ScoreStore.setScores(action.scores);
 			ScoreStore.emitChange();
 			break;
-		case ActionTypes.SET_GAME_OVER:
-				//TODO
-			ScoreStore.setGameInProgress(false);
-			ScoreStore.emitChange();
-			break;
 		case ActionTypes.LOGIN:
 			ScoreStore.login(action.data);
 			ScoreStore.emitChange();
@@ -179,8 +197,12 @@ ScoreStore.dispatchToken = Dispatcher.register(function(action) {
 			ScoreStore.setReadyStatus(action.isReady);
 			ScoreStore.emitChange();
 			break;
-		case ActionTypes.SET_GAME_RULE:
-			ScoreStore.setGameRule(action.rule);
+		case ActionTypes.UPDATE_ROUND_DATA:
+			ScoreStore.setRoundData(action.roundData);
+			ScoreStore.emitChange();
+			break;
+		case ActionTypes.END_ROUND:
+			ScoreStore.endRound(action.message);
 			ScoreStore.emitChange();
 			break;
 		// Reset game clears both score containers.

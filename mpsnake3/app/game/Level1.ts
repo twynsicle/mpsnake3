@@ -68,25 +68,25 @@ module MPSnake {
 			// This allows us to both persist this across sessions and communicate between
 			// the interface and game components.
 			var userDetails = sessionStorage.getItem('user-details');
-			userDetails = JSON.parse(userDetails);
-
-			// Convert game rule provided as string to GameRule enum.
-			var rule:GameRule;
-			switch (userDetails.rule) {
-				case 'last-team':
-					rule = GameRule.LAST_TEAM;
-					break;
-				case 'last-snake':
-					rule = GameRule.LAST_SNAKE;
-					break;
-				case 'first-snake':
-					rule = GameRule.FIRST_SNAKE_15;
-					break;
-				default:
-					rule = GameRule.LAST_SNAKE;
-			}
-
 			if (userDetails) {
+				userDetails = JSON.parse(userDetails);
+
+				// Convert game rule provided as string to GameRule enum.
+				var rule:GameRule;
+				switch (userDetails.rule) {
+					case 'last-team':
+						rule = GameRule.LAST_TEAM;
+						break;
+					case 'last-snake':
+						rule = GameRule.LAST_SNAKE;
+						break;
+					case 'first-snake':
+						rule = GameRule.FIRST_SNAKE_15;
+						break;
+					default:
+						rule = GameRule.LAST_SNAKE;
+				}
+
 				console.log('creating snake');
 				Global.snakeManager.createLocalPlayer({
 					color: userDetails.color || Random.generateHex(),
@@ -104,24 +104,17 @@ module MPSnake {
 			// Monitor controls for when ready status changes.
 			$('body').on('click', '.ready button', function() {
 				if ($(this).val() === 'ready') {
-					console.log('ready');
-					Global.snakeManager.localPlayer.setReady(true, true);
+					// Give time for react layer to perform it's operations.
+					window.setTimeout(function() {
+						Global.snakeManager.localPlayer.setReady(true, true);
+					}, 10);
 				} else {
-					Global.snakeManager.localPlayer.setReady(false, true);
+					window.setTimeout(function() {
+						Global.snakeManager.localPlayer.setReady(false, true);
+					}, 10);
 				}
 			});
 
-			$(document).on('keydown', (event:JQueryEventObject) => {
-				if (event.which === 32) { // spacebar
-					if (Global.round.gameState === GameState.STARTED) {
-						Global.round.gameState = GameState.READY;
-					} else {
-						Global.round.gameState = GameState.STARTED;
-					}
-					Global.round.broadcastRoundData();
-					return false;
-				}
-			});
 		}
 
 		update():void {
@@ -143,41 +136,6 @@ module MPSnake {
 					Global.snakeManager.update();
 
 					Global.round.update();
-					//
-					// Check round finish conditions.
-					//
-					var roundEnd = false;
-
-					// All but one snake is inactive.
-					/*var activeSnakes = 0;
-					if (!Global.snakeManager.localPlayer.isInactive)  {
-						activeSnakes += 1;
-					}
-					_.each(Global.snakeManager.remotePlayers, (snake:Snake) => {
-						if (!snake.isInactive) {
-							activeSnakes += 1;
-						}
-					});
-					if (activeSnakes <= 1) {
-						roundEnd = true;
-					}*/
-
-					// The local player is the only player left in the game.
-					// Disable this for testing.
-					/*var snakeCount = 0;
-					_.each(Global.snakeManager.remotePlayers, (snake:Snake) => {
-						snakeCount += 1;
-					});
-					if (!snakeCount) {
-						roundEnd = true;
-					}*/
-
-					if (roundEnd) {
-						Global.round.gameState = GameState.READY;
-						console.log('game over');
-						//TODO victory message.
-					}
-
 				}
 
 				this.lastUpdate = (new Date().getTime());

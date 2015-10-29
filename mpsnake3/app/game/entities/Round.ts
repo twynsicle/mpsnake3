@@ -56,18 +56,52 @@ module MPSnake {
 		}
 
 
+		public startRound ():void {
+
+		}
+
 		public update():void {
+			// Check if player is the only remaining player in the game.
+			if (!Object.keys(Global.snakeManager.remotePlayers).length) {
 
-			// Check if round has ended.
-			if (this.endCondition.checkEnded()) {
+				console.log('only player remaining');
+				this.endRound({
+					team: Global.snakeManager.localPlayer.team,
+					name: Global.snakeManager.localPlayer.name,
+					rule: 'last-snake'
+				});
+			}
 
-				// Send game over signal.
+			// Check if round end condition has been met.
+			var endMessage = this.endCondition.checkEnded();
+			if (!_.isEmpty(endMessage)) {
+
+				console.log(endMessage);
+				this.endRound(endMessage);
 			}
 		}
 
 
-		public endRound():void {
+		public endRound(endMessage):void {
 			this.fruit.destroy();
+
+			Global.snakeManager.localPlayer.roundsPlayed += 1;
+
+			Global.snakeManager.localPlayer.isReady = false;
+			_.each(Global.snakeManager.remotePlayers, (remoteSnake:Snake) => {
+				remoteSnake.isReady = false;
+			});
+
+			this.gameState = GameState.ENDED;
+
+			Global.updateInterface();
+			Global.signalInterfaceRoundEnd(endMessage);
+
+			// We don't need to broadcast this as each client should
+			// come to this realization independently.
+
+			// Destroy the round object to ensure we start each round fresh.
+			Global.round = null;
 		}
 
 

@@ -1,5 +1,11 @@
 .homepage {
 
+	// Common
+	.message {
+		font-size: 1rem;
+	}
+
+	// Structure
 	.main {
 		@include span (8 of 12);
 		section { margin-bottom: 2rem; }
@@ -11,16 +17,56 @@
 			width: 800px;
 			height: 800px;
 			background-color: #333;
+			border-radius: 5px;
 		}
 
 		.game #canvas {
 			border-bottom: 3px solid #e3e4e8;
 			background-color: white;
-			border-radius: 5px;
 		}
 
 	}
 
+	// Result
+	#result {
+		//display: block;
+		display: none;
+		position: absolute;
+		//bottom: 1rem;
+		bottom: -5rem;
+		left: 10%;
+		width: 80%;
+		transition: bottom .8s, opacity .4s;
+		cursor: pointer;
+		text-align: center;
+		.team-logo {
+			height: 4rem;
+			width: 4rem;
+			display: inline-block;
+			border-radius: 2rem;
+			background: transparent url(/app/images/lemons.png) center center / 4rem 4rem no-repeat;
+			&.lemons {background-image:url(/app/images/lemons.png);}
+			&.ai {background-image: url(/app/images/ai.png);}
+			&.biebs {background-image: url(/app/images/biebs.png);}
+			&.giants {background-image: url(/app/images/giants.png);}
+			&.illuminati {background-image: url("/app/images/illuminati.jpg");}
+			&.ops {background-image: url(/app/images/ops.png);}
+		}
+		.message {
+			padding-top: 1rem;
+			text-align: center;
+		}
+
+		&:hover {
+			opacity: 0.4;
+		}
+		&.active {
+			display:block;
+			bottom: 1rem;
+		}
+	}
+
+	// Login
 	#account {
 		position: absolute;
 		top: 15%;
@@ -158,23 +204,7 @@
 						opacity: 1;
 					}
 				}
-
-
 			}
-
-			// Team.
-			/*.teams-2 {
-				display: flex;
-				justify-content: center;
-
-			}*/
-			/*.team label {background: transparent url(/app/images/lemons.png) center center / 3.5rem 3.5rem no-repeat;}
-			.team .lemons {background-image:url(/app/images/lemons.png);}
-			.team .ai {background-image: url(/app/images/ai.png);}
-			.team .biebs {background-image: url(/app/images/biebs.png);}
-			.team .giants {background-image: url(/app/images/giants.png);}
-			.team .illuminati {background-image: url("/app/images/illuminati.jpg");}
-			.team .ops {background-image: url(/app/images/ops.png);}*/
 
 			.account-controls button{
 				width: 75%;
@@ -204,13 +234,17 @@
 	}
 
 
-
 	aside {
 		@include span (4 of 12 last);
 		padding-top: 1rem;
 
+		// Controls
 		#controls {
 			margin-bottom: 1rem;
+
+			> div {
+				padding: 1.5rem;
+			}
 
 			.profile {
 				@include clearfix();
@@ -246,7 +280,6 @@
 
 			.ready {
 				@include clearfix();
-				margin-bottom: 1rem;
 				line-height: 2.6;
 
 				button {
@@ -270,43 +303,101 @@
 			}
 		}
 
+		// Scores
 		#scores {
-			//outline: 1px solid hotpink;
-			.team {
-				margin-bottom: 1rem;
+			.score-container {
+				padding: 1.5rem;
+			}
 
-				h4 {
-					margin-bottom: .1rem;
+			.game-rule {
+				font-size: 0.9rem;
+				margin-bottom: 1rem;
+				color: $secondary-color;
+			}
+
+			.team {
+				$image-size: 35px;
+				margin-bottom: 1.5rem;
+				min-height: $image-size;
+				display: flex;
+				justify-content: flex-start;
+				align-content: center;
+
+				&:before {
+					content: '';
+					display: inline-block;
+					width: $image-size;
+					min-width: $image-size;
+					height: $image-size;
+					background: transparent url(/app/images/lemons.png) top left / $image-size $image-size no-repeat;
+					border-radius: $image-size / 2;
+					margin-right: 10px;
+					padding: 0;
 				}
+				&.lemons:before {background-image:url(/app/images/lemons.png);}
+				&.ai:before {background-image: url(/app/images/ai.png);}
+				&.biebs:before {background-image: url(/app/images/biebs.png);}
+				&.giants:before {background-image: url(/app/images/giants.png);}
+				&.illuminati:before {background-image: url("/app/images/illuminati.jpg");}
+				&.ops:before {background-image: url(/app/images/ops.png);}
+
+				ul {
+					width: 100%;
+					display: inline;
+					border-left: 1px solid lightgrey;
+					padding-left: .5rem;
+				}
+
+				h4 {display: none;}
 			}
 
 			.player {
-				//outline: 1px solid hotpink;
+				position: relative;
 				.status {
-					display: inline-block;
-					@include size(0.7rem);
-					border-radius: 0.35rem;
-					border: 1px solid #ccc;
-					margin-right: .3rem;
-					position: relative;
-					top: 1px;
-					&.ready {
-						background-color: $active-color;
-						border: none;
+					float: right;
+					&.unready:after {
+						padding-right: .8rem;
+						content: 'not ready';
+						font-size: 0.8rem;
+						color: lightgrey;
 					}
 				}
 				.score {
 					float: right;
-				}
-				.controls {
+					width: 32px;
 					text-align: center;
-					button {
-						display: inline-block;
+				}
+				&.local .name {
+					font-weight: 600;
+				}
+
+				&.inactive:before {
+					content: '';
+					border-bottom: 1px solid lightgrey;
+					width: 99%;
+					position: absolute;
+					left: -4px;
+					top: 41%;
+				}
+				&.inactive {
+					color: lightgrey !important;
+					.name {
+						font-weight: normal;
 					}
 				}
 			}
-			.player.local .name{
-				font-weight: 600;
+			.total-score {
+				padding-top: .3rem;
+				float: right;
+				span {
+					display: flex; justify-content: center; align-items: center;
+					$size: 2rem;
+					border-radius: $size / 2;
+					width: $size;
+					height: $size;
+					background-color: $accent-color;
+					color: white;
+				}
 			}
 		}
 	}

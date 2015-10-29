@@ -11,9 +11,10 @@ var PlayerState = Constants.PlayerState;
 var ControlPanel = React.createClass({
 	getStateFromStores: function() {
 		return {
+			countPlayers: ScoreStore.getCountPlayers(),
 			playerState: ScoreStore.getPlayerState(),
 			localPlayer: ScoreStore.getPlayer(),
-			gameInProgress: ScoreStore.getGameInProgress()
+			roundData: ScoreStore.getRoundData()
 		};
 	},
 
@@ -28,25 +29,26 @@ var ControlPanel = React.createClass({
 		ScoreActionCreators.setReadyStatus(true);
 	},
 	render: function() {
-		var contents;
-
 		if (this.state.playerState !== PlayerState.PLAYING) {return null;}
 
-		// TODO this is still important
-		if (!this.state.gameInProgress) {
-			if (this.state.localPlayer.ready) {
-				contents = <button className="unready" onClick={this._unready}>unready</button>
-			} else {
-				contents = <button className="ready" onClick={this._ready}>ready</button>
-			}
+		var ready;
+		if (this.state.countPlayers < 2) {
+			ready = <li className="message">waiting for additional players to join game.</li>
+		} else if (this.state.roundData.gameState == 1) { // Playing
+			ready = <li className="ready">game in progress</li>
 		} else {
-			contents = <p>game in progress</p>
+			 ready = (
+					 <li className="ready">
+						<span>join game?</span>
+						<button type="button" value="unready" className={!this.state.localPlayer.ready ? 'active' : ''} onClick={this._setUnready}>not ready</button>
+						<button type="button" value="ready" className={this.state.localPlayer.ready ? 'active' : ''} onClick={this._setReady}>ready</button>
+					</li>
+			 );
 		}
 
 		var profileStyle = {
 			backgroundColor: this.state.localPlayer.color
 		};
-
 		return (
 			<section id="controls" className="panel">
 				<div className="">
@@ -58,14 +60,7 @@ var ControlPanel = React.createClass({
 							</div>
 							<span className="profile-color" style={profileStyle}>{this.state.localPlayer.score}</span>
 						</li>
-						<li className="ready">
-							<span>join game?</span>
-							<button type="button" value="unready" className={!this.state.localPlayer.ready ? 'active' : ''} onClick={this._setUnready}>not ready</button>
-							<button type="button" value="ready" className={this.state.localPlayer.ready ? 'active' : ''} onClick={this._setReady}>ready</button>
-						</li>
-						<li className="logout">
-							<button type="button">log out</button>
-						</li>
+						{ready}
 					</ul>
 				</div>
 			</section>

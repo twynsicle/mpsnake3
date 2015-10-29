@@ -38,8 +38,12 @@ var FakeSelect = React.createClass({
 
 		return (
 			<input type="text" id={this.props.id} className={classes}
-				   name={this.props.name} ref="input" placeholder={this.props.placeholder}
-				   required={this.props.required} onChange={this._onChange} />
+				value={this.props.value}
+				name={this.props.name} ref="input" placeholder={this.props.placeholder}
+				required={this.props.required} onChange={this._onChange}
+				pattern={this.props.pattern}
+				tabIndex={this.props.tabindex}
+			/>
 			//<input type="text" name="team" ref="input" required={this.props.required} > </input>
 
 		);
