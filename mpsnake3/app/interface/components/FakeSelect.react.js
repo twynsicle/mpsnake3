@@ -23,16 +23,22 @@ var FakeSelect = React.createClass({
 		var option = React.findDOMNode(event.target),
 			value = option.getAttribute('data-value');
 
-		// Set option.
-		this.setState({selected: value});
-		var input = React.findDOMNode(this.refs.input);
-		input.value = value;
+		if ($(option).is('span')) {
+			value = $(event.target).closest('[data-value]').data('value');
+		}
 
-		// Hide fake select.
-		React.findDOMNode(this.refs.fakeSelect).blur();
+		if (value) {
+			// Set option.
+			this.setState({selected: value});
+			var input = React.findDOMNode(this.refs.input);
+			input.value = value;
 
-		// Remove error highlighting.
-		this.setState({showErrorHighlight: false});
+			// Hide fake select.
+			React.findDOMNode(this.refs.fakeSelect).blur();
+
+			// Remove error highlighting.
+			this.setState({showErrorHighlight: false});
+		}
 	},
 	_onInvalid: function(event) {
 		event.preventDefault();

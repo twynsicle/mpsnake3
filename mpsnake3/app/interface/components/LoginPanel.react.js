@@ -118,7 +118,7 @@ var LoginPanel = React.createClass({
 							<li className="color-input">
 								<label ref="colorButton" style={colorButtonStyle}>
 									<span>snake color</span>
-									<input type="color" className="color" name="color" ref="color" tabIndex="3" onInput={this._changeColor}/>
+									<input type="color" defaultValue={this.state.color} className="color" name="color" ref="color" tabIndex="3" onInput={this._changeColor}/>
 								</label>
 							</li>
 							{ai}
@@ -146,54 +146,5 @@ var LoginPanel = React.createClass({
 		);
 	}
 });
-
-//var AccountContainer = React.createClass({
-//	getStateFromStores: function() {
-//		return ({
-//			localPlayer: ScoreStore.getPlayer(),
-//			authenticated: ScoreStore.isAuthenticated(),
-//			gameInProgress: ScoreStore.gameInProgress()
-//		});
-//		//TODO get state from parent
-//	},
-//
-//	getInitialState: function() {return this.getStateFromStores();},
-//	componentDidMount: function() {ScoreStore.addChangeListener(this._onChange);},
-//	componentWillUnmount: function() {ScoreStore.removeChangeListener(this._onChange);},
-//	_onChange: function() {this.setState(this.getStateFromStores());},
-//
-//	render: function() {
-//		var contents;
-//
-//		if (this.state.authenticated) {
-//			if (this.state.localPlayer && this.state.localPlayer.ready) {
-//				contents = <button className="unready" onClick={this._unready}>unready</button>
-//			} else {
-//				contents = <button className="ready" onClick={this._ready}>ready</button>
-//			}
-//		} else {
-//			contents = <p>game in progress</p>
-//		}
-//
-//		return (
-//			<section id="account" className="panel">
-//				<header>
-//					<h3>game</h3>
-//				</header>
-//				<div className="login-container">
-//					{contents}
-//				</div>
-//			</section>
-//		);
-//
-//	},
-//	_unready: function() {
-//		//NetManager.ready(false);
-//	},
-//	_ready: function() {
-//		//NetManager.ready(true);
-//	}
-//});
-
 
 module.exports = LoginPanel;
